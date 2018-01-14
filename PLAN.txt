@@ -1,0 +1,58 @@
+Plan for Breakout Game - Jack Fitzpatrick
+
+Looking through the breakout variants, Vortex immediately stuck out to me. I had an iPod classic as a kid, and that was my favorite game on it. Not only is the circular arena unique, but it perfectly fit the controls, as the iPod classic had a circular scroll wheel. In my game, it will be a "normal" rectangular field, but being aware of the controls and layout of the game will allow me to be more creative.
+
+The basic layout of the board will be fairly straight forward. There will be a player-controlled block at the bottom of the screen, one (or multiple, depending on power ups) ball, and varying number of layers of bricks near the top. There will be 10 bricks across, with up to 8 layers (at the hardest level). There will be 4 general types of blocks, with varying degrees of durability. One type will be normal, and just break when it is hit from any direction. One type will produce a random power up (or negative effect) when broken. One type will only break if it is hit from the top section. The last type will be a permanent block, which is unable to be broken, and will not count towards the win condition. The first three types of blocks can have varying durability, so it would take multiple hits to break them.
+
+Power ups/downs will fall from power blocks, and will be activated if the player's paddle touches it. Power ups include an extra ball, slowing down the ball, and increasing the paddle length. Power downs include shortening the paddle length, increasing ball speed, and reversing control direction (so pressing left moves the paddle right and vice versa).
+
+The level layouts would start fairly simple, and increase in complexity and difficulty as the player progresses. There would be at least 5 levels. The basic designs for a few levels are shown below, where "===d===" is a normal bar (with durability d), "#######" is a permanent bar, "+++d+++" is a power-up bar, and "[__d__]" is the bar that can only be hit from the top. These levels will be stored in a separate file, and loaded in by the game each time it is started. Each new level, the ball speed is slightly increased.
+
+Level 1 will be fairly straightforward, with no specialty blocks.
+
+|  ===3===  ===3===  ===3===  ===3===  ===3===  ===3===  ===3===  ===3===  ===3===  ===3===  |
+|  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  |
+|  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  |
+|  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  |
+|  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  |
+|																							 |
+|																							 |
+|																							 |
+|																							 |
+|																							 |
+|																							 |
+|																							 |	
+|																							 |
+|																							 |
+|																							 |
+|											#######											 |
+
+
+Level 2 will include various power up/down blocks, dispersed throughout the normal blocks.
+
+Level 3 will introduce permanent blocks. There will be a couple lower down to block shots, as well as a few interspersed between the normal and power blocks.
+
+|  ===3===  ===1===  +++3+++  ===3===  ===3===  ===3===  ===3===  +++3+++  ===1===  ===3===  |
+|  ===3===  #######  ===3===  ===3===  ===3===  ===3===  ===3===  ===3===  #######  ===3===  |
+|  ===2===  ===2===  +++3+++  ===2===  ===2===  ===2===  ===2===  +++3+++  ===2===  ===2===  |
+|  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  |
+|  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  ===1===  |
+|  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  ===2===  |
+|																							 |
+|																							 |
+|           #######           #######                    #######           #######           |
+|																							 |
+|																							 |
+|																							 |	
+|																							 |
+|																							 |
+|																							 |
+|											#######											 |
+
+Level 4 will introduce the top-sided blocks, which require a bank shot to destroy. 
+
+Level 5, the last level as of now, combine all these features into one difficult place.
+
+Cheat keys will include skipping to a specific level, with keys 1-5. L will give an extra life, and P will destroy all blocks on the board. 
+
+I am planning on including a mode where the blocks are movable horizontally. That is, when a block is hit at an angle, it will be "pushed" slightly, and collide with the other blocks around it. This will create new openings, and scenarios not present in the original brick breaker. This is a significant addition, as it will require each block to have its own velocity, drag, and ease of being pushed. Many more collisions will have to be detected and handled.
