@@ -38,6 +38,11 @@ public class Breakout extends Application {
     public static final int BALL_RADIUS = 5;
     public static final int BRICK_CURVE = 5;
     public static final String HEART_IMAGE = "heart.png";
+    public static final Paint BALL_COLOR = Color.FORESTGREEN;
+    public static final String POWER_UP_IMAGE = "extraballpower.gif";
+    public static final String POWER_DOWN_IMAGE = "sizepower.gif";
+    public static final double FALL_SPEED = 100;
+
     
     private double paddleSpeed = 0;
     private boolean leftKeyHeld = false;    
@@ -50,7 +55,12 @@ public class Breakout extends Application {
     private double pi = Math.PI;
 	private Label score;
 	private Image heart = new Image(getClass().getClassLoader().getResourceAsStream(HEART_IMAGE));
+	private Image powerUp = new Image(getClass().getClassLoader().getResourceAsStream(POWER_UP_IMAGE));
+	private Image powerDown = new Image(getClass().getClassLoader().getResourceAsStream(POWER_DOWN_IMAGE));
 	private Life[] hearts = new Life[3];
+	private int scoreValue = 0;
+	private boolean sticky = false;
+	private ArrayList<Power> powers;
     
 	@Override
 	public void start (Stage stage) {
@@ -73,10 +83,10 @@ public class Breakout extends Application {
         width -= UI_SIZE;
         
         balls = new ArrayList<Ball>();
-        balls.add(new Ball());
+        
         paddle = new Rectangle(width / 5, 10);
         
-
+        
         root.getChildren().add(paddle);
         
         paddle.setY(height - 2*paddle.getBoundsInParent().getHeight());
@@ -85,16 +95,22 @@ public class Breakout extends Application {
         paddle.setArcWidth(20);
         
         
-        	
+        balls.add(new Ball());
        
+        
+        powers = new ArrayList<Power>();
         bricks = new ArrayList<Brick>();
         for(int k = 0; k < NUM_BRICKS; k++) {
-        	bricks.add(new Brick(width / 12, 20, 2, 0)); 			//Can add different colors/types here, for now, just base type w/ 1 durability
-        	root.getChildren().add(bricks.get(k));
-        	bricks.get(k).setX(k%10 * width/10 + width / 120);
-        	bricks.get(k).setY((int) k/10 * height / 15);
-        	bricks.get(k).setArcHeight(BRICK_CURVE);
-        	bricks.get(k).setArcWidth(BRICK_CURVE);
+        	Brick toAdd = new Brick(width / 12, 20, 2, 0);
+        	bricks.add(toAdd); 			//Can add different colors/types here, for now, just base type w/ 1 durability
+        	root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, -2 is permanent
+        	toAdd.setX(k%10 * width/10 + width / 120);
+        	toAdd.setY((int) k/10 * height / 15);
+        	toAdd.setArcHeight(BRICK_CURVE);
+        	toAdd.setArcWidth(BRICK_CURVE);
+        	
+        	if(toAdd.getType() > 0) powers.add(new Power(toAdd.getType(), toAdd));
+        	
         }
         
         
@@ -122,12 +138,9 @@ public class Breakout extends Application {
         root.getChildren().add(score);
         root.getChildren().addAll(heart1, heart2, heart3);
         
-                
-        
         
         return scene;
     }
-
 
     private void step (double elapsedTime) {
     	
@@ -175,6 +188,7 @@ public class Breakout extends Application {
         	
         	if(active.getBoundsInParent().intersects(paddle.getBoundsInParent())) {
         		if(y + r > paddle.getY() || y > paddle.getY() + paddle.getHeight()/2) active.setAngle((((x-(paddle.getX()+paddle.getWidth()/2))/paddle.getWidth()-0.5)*pi*.6)-0.2*pi);
+        		if(sticky) active.setStuck(true);
         	}
         	
         	for(int kk = 0; kk < bricks.size(); kk++) {
@@ -182,22 +196,33 @@ public class Breakout extends Application {
         		
         		if(b.getBoundsInParent().intersects(active.getBoundsInParent())) {
         			int durability = b.reduceDurability();
+        			scoreValue += 10;
         			if(durability == 0) {
         				root.getChildren().remove(b);
         				bricks.remove(kk);
-        				
+        				scoreValue += 90;
         			}
         			if(x > b.getX() + b.getWidth()) active.bounceX(1);
         			else if(x < b.getX()) active.bounceX(-1);
         			if(y > b.getY() + b.getHeight()) active.bounceY(1);
         			else if(y < b.getY()) active.bounceY(-1);
         			
-        			
         		}
+        		
         	}
+        	
+        	
+        	if(active.getStuck()) active.stick();
+        	
         	
         	active.setCenterX(x + active.getSpeeds()[0] * elapsedTime);
             active.setCenterY(y + active.getSpeeds()[1] * elapsedTime);
+            
+    	}
+    	score.setText("Score\n" + scoreValue);
+    	for(Power p : powers) {
+    		if(p.getOwner().getDurability() == 0 && p.getSpeed() == 0) {p.startFall();}
+    		p.updatePos(elapsedTime);
     	}
 
     }
@@ -209,6 +234,8 @@ public class Breakout extends Application {
         } else if (code == KeyCode.LEFT) {
         	paddleSpeed = -MAX_PADDLE_SPEED;
         	leftKeyHeld = true;
+        } else if (code == KeyCode.SPACE) {
+        	sticky = true;
         } else if (code == KeyCode.UP) {
         } else if (code == KeyCode.DOWN) {
         }
@@ -219,6 +246,12 @@ public class Breakout extends Application {
     		rightKeyHeld = false;
     	} else if(code == KeyCode.LEFT) {
     		leftKeyHeld = false;
+    	} else if(code == KeyCode.SPACE) {
+    		for(Ball b : balls) {
+    			if(b.getStuck()) b.bounceY();
+    			b.setStuck(false);
+    			sticky = false;
+    		}
     	}
 	}
 
@@ -238,13 +271,11 @@ public class Breakout extends Application {
     	return true;
     }
     
-    
-    
     public static void main (String[] args) {
         launch(args);
     }
     
-    public class Brick extends Rectangle {
+    private class Brick extends Rectangle {
     	public Brick(int width, int height, int durability, int type) {
     		super(width, height);
     		this.durability = durability;
@@ -271,43 +302,45 @@ public class Breakout extends Application {
     		this.setFill(Color.rgb(ThreadLocalRandom.current().nextInt(256-80*durability,256-80*(durability-1)),ThreadLocalRandom.current().nextInt(256-80*durability,256-80*(durability-1)),ThreadLocalRandom.current().nextInt(256-80*durability,256-80*(durability-1))));
     	}
     	
+    	public int getDurability() {return durability;}
     	
     	
     }
     
-    public class Ball extends Circle {
+    private class Ball extends Circle {
     	public Ball() {
-    		super(BALL_RADIUS, Color.FORESTGREEN);
+    		super(BALL_RADIUS, BALL_COLOR);
     		velocity = INIT_BALL_SPEED;
-    		angle = 4*pi/3;
+    		angle = 3*pi/2;
     		speeds = new double[2];
     		setSpeeds();
-    		setCenterY((YSIZE*2/3));
-            setCenterX((XSIZE - UI_SIZE)/2);
+    		setCenterX(paddle.getX() + paddle.getWidth() / 2);
+    		setCenterY(paddle.getY()-getRadius());
             root.getChildren().add(this);
+            stick();
+            stuck = true;
     	}
     	
-    	double velocity;
-    	double angle;
-    	double[] speeds;
+    	private double velocity;
+    	private double angle;
+    	private double[] speeds;
+    	private boolean stuck;
     	
-    	public void bounceX() {//int direction) {		// -1 Guarantees negative, +1 guarantees positive, 0 is a reversal
-    		
-    		angle = pi - angle;
+    	public void bounceX() {
+    		angle = pi - angle;					// Reflects angle across x axis		
+    		while(angle < 0) angle += 2*pi;		// Loop normalizes angle to between 0 and 2*pi
+    		angle = angle%(2*pi);
+    		setSpeeds();
+    	}
+    	
+    	public void bounceY() {
+    		angle = 2*pi - angle;				// Reflects across y axis
     		while(angle < 0) angle += 2*pi;
     		angle = angle%(2*pi);
     		setSpeeds();
     	}
     	
-    	public void bounceY() {//int direction) {		// -1 Guarantees negative, +1 guarantees positive, 0 is a reversal
-
-    		angle = 2*pi - angle;
-    		while(angle < 0) angle += 2*pi;
-    		angle = angle%(2*pi);
-    		setSpeeds();
-    	}
-    	
-    	public void bounceX(int direction) {
+    	public void bounceX(int direction) {			// Ensures a bounce in specified (+ or -) direction
     		if(angle >= pi/2 && angle <= 3*pi/2) {
     			if(direction > 0) bounceX();
     			else return;
@@ -315,7 +348,6 @@ public class Breakout extends Application {
     			if(direction < 0) bounceX();
     			else return;
     		}
-    		setSpeeds();
     	}
     	
     	public void bounceY(int direction) {
@@ -326,7 +358,6 @@ public class Breakout extends Application {
     			if(direction < 0) bounceY();
     			else return;
     		}
-    		setSpeeds();
     	}
     	
     	public void setAngle(double ang) {
@@ -336,19 +367,27 @@ public class Breakout extends Application {
     		setSpeeds();
     	}
     	
-    	public double[] getSpeeds() {
-    		return speeds;
+    	public void stick() {
+    		speeds[0] = paddleSpeed;
+    		speeds[1] = 0;
+    		stuck = true;
     	}
     	
-    	private void setSpeeds() {
+    	public double[] getSpeeds() {return speeds;}
+    	
+    	public void setSpeeds() {					// When speeds are reset (i.e., a bounce is called), the ball is no longer stuck
     		speeds[0] = velocity*Math.cos(angle);
     		speeds[1] = velocity*Math.sin(angle);
+    		stuck = false;
     	}
-    }
-
+    	
+    	public boolean getStuck() {return stuck;}
+    	
+    	public void setStuck(boolean b) {stuck = b;}
+    	
+    }    
     
-    
-    public class Life extends ImageView {
+    private class Life extends ImageView {
     	public Life(int pos) {
     		super(heart);
     		setFitWidth(UI_SIZE / 4);
@@ -361,10 +400,42 @@ public class Breakout extends Application {
     	public boolean isActive() {return active;}
     	public void setActive(boolean b) {active = b;}
     	
-    	boolean active;
+    	private boolean active;
     	
     }
     
+    private class Power extends ImageView {    	
+    	public Power(int type, Brick owner) {		// 1 is extra ball, 2 is slower ball, 3 is bigger paddle, 4 is smaller paddle, 5 is faster ball, 6 is reverse controls
+    		super();
+    		if(type < 4) this.setImage(powerUp);
+    		else this.setImage(powerDown);
+    		this.type = type;
+    		this.owner = owner;
+    		root.getChildren().add(this);
+    		speed = 0;
+    	}
+    	
+    	private int type;
+    	private Brick owner;
+    	private double speed;
+    	
+    	public void updatePos(double elapsedTime) {
+    		if(speed == 0) {
+    			setX(owner.getX() + owner.getWidth() / 2 - this.getBoundsInParent().getWidth() / 2);
+    			setY(owner.getY() + owner.getHeight() / 2 - this.getBoundsInParent().getHeight() / 2);
+    		} else {
+    			setY(this.getY() + elapsedTime * speed);
+    		}
+    	}
+    	
+    	public void startFall() {speed = FALL_SPEED;}
+    	
+    	public double getSpeed() {return speed;}
+    	
+    	public int getType() {return type;}
+    	
+    	public Brick getOwner() {return owner;}
+    }
     
     
 }
