@@ -201,19 +201,18 @@ public class Breakout extends Application {
         		Brick b = bricks.get(kk);
         		
         		if(b.getBoundsInParent().intersects(active.getBoundsInParent())) {
-        			int durability = b.reduceDurability();
         			scoreValue += 10;
-        			if(durability == 0) {
-        				root.getChildren().remove(b);
-        				bricks.remove(kk);
-        				scoreValue += 90;
-        			}
+        			if(b.reduceDurability() == 0) scoreValue+=90;
         			if(x > b.getX() + b.getWidth()) active.bounceX(1);
         			else if(x < b.getX()) active.bounceX(-1);
         			if(y > b.getY() + b.getHeight()) active.bounceY(1);
         			else if(y < b.getY()) active.bounceY(-1);
         			
         		}
+        		if(b.getDurability() <= 0) {
+    				root.getChildren().remove(b);
+    				bricks.remove(kk);
+    			}
         		
         	}
         	
@@ -317,7 +316,7 @@ public class Breakout extends Application {
     	String str;
     	while((str = br.readLine()) != null) {
     		String[] brickCodes = str.split(" ");
-    		if(brickCodes[0].equals("-")) return;
+    		if(brickCodes[0].equals("-")) {return;}
     		for(int k = 0; k < brickCodes.length; k++) {
     			char[] code = brickCodes[k].toCharArray();
     			int type = 0;
@@ -332,6 +331,7 @@ public class Breakout extends Application {
             	if(toAdd.getType() > 0) powers.add(new Power(toAdd.getType(), toAdd));
     		}
     	}
+    	gameOver();
     }
     
     private boolean loseLife() {		// returns true when game is over
@@ -373,12 +373,14 @@ public class Breakout extends Application {
         	bricks.get(k).setX(k%10 * (XSIZE)/10 + (XSIZE) / 132);
         	bricks.get(k).setY((int) k/10 * YSIZE / 12 + YSIZE / 60);
         }
-        
-        
-        if(bricks.size() == 0) System.exit(1);
-        
+                
     }
 
+    private void gameOver() {
+    	System.out.println("GAMEOVER");
+    	System.exit(1);
+    }
+    
     private void nextLevel() {
     	for(int k = balls.size()-1; k >= 0; k--) {
     		root.getChildren().remove(balls.get(k));
