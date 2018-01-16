@@ -45,7 +45,7 @@ public class Breakout extends Application {
     public static final String HEART_IMAGE = "heart.png";
     public static final String POWER_UP_IMAGE = "extraballpower.gif";
     public static final String POWER_DOWN_IMAGE = "sizepower.gif";
-    public static final String LEVEL_FILE = "LevelFile.txt";
+    public static final String LEVEL_FILE = "LevelFile2.txt";
     public static final double FALL_SPEED = 100;
     public static final Color BRICK_COLOR_1 = Color.rgb(251, 139, 76);
     public static final Color BRICK_COLOR_2 = Color.rgb(224, 98, 29);
@@ -97,7 +97,7 @@ public class Breakout extends Application {
         width -= UI_SIZE;
         
         try{ 
-        	FileInputStream fstream = new FileInputStream("LevelFile.txt");
+        	FileInputStream fstream = new FileInputStream(LEVEL_FILE);
         	DataInputStream in = new DataInputStream(fstream);
         	br = new BufferedReader(new InputStreamReader(in));
         } catch(FileNotFoundException e) {e.printStackTrace();}
@@ -377,8 +377,15 @@ public class Breakout extends Application {
     }
 
     private void gameOver() {
-    	System.out.println("GAMEOVER");
-    	System.exit(1);
+    	Rectangle gameOverScreen = new Rectangle(XSIZE, YSIZE);
+        gameOverScreen.setFill(UI_COLOR);
+        gameOverScreen.setOnMouseClicked(new EventHandler<MouseEvent>() {
+        	@Override
+        	public void handle(MouseEvent me) {
+        		System.exit(1);
+        	}
+        });
+        root.getChildren().add(gameOverScreen);
     }
     
     private void nextLevel() {
