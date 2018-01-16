@@ -1,3 +1,9 @@
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -5,22 +11,17 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.EventHandler;
-import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -44,6 +45,7 @@ public class Breakout extends Application {
     public static final String HEART_IMAGE = "heart.png";
     public static final String POWER_UP_IMAGE = "extraballpower.gif";
     public static final String POWER_DOWN_IMAGE = "sizepower.gif";
+    public static final String LEVEL_FILE = "LevelFile.txt";
     public static final double FALL_SPEED = 100;
     public static final Color BRICK_COLOR_1 = Color.rgb(251, 139, 76);
     public static final Color BRICK_COLOR_2 = Color.rgb(224, 98, 29);
@@ -64,13 +66,14 @@ public class Breakout extends Application {
 	private Image heart = new Image(getClass().getClassLoader().getResourceAsStream(HEART_IMAGE));
 	private Image powerUp = new Image(getClass().getClassLoader().getResourceAsStream(POWER_UP_IMAGE));
 	private Image powerDown = new Image(getClass().getClassLoader().getResourceAsStream(POWER_DOWN_IMAGE));
+	
 	private Life[] hearts = new Life[3];
 	private int scoreValue = 0;
 	private boolean sticky = false;
 	private ArrayList<Power> powers;
 	private KeyCode left = KeyCode.LEFT;
 	private KeyCode right = KeyCode.RIGHT;
-    //private Rectangle splash;
+	private BufferedReader br;
 	
 	@Override
 	public void start (Stage stage) {
@@ -92,6 +95,12 @@ public class Breakout extends Application {
         Scene scene = new Scene(root, width, height, background);
         width -= UI_SIZE;
         
+        try{ 
+        	FileInputStream fstream = new FileInputStream("LevelFile.txt");
+        	DataInputStream in = new DataInputStream(fstream);
+        	br = new BufferedReader(new InputStreamReader(in));
+        } catch(FileNotFoundException e) {e.printStackTrace();}
+        
         balls = new ArrayList<Ball>();
         
         paddle = new Rectangle(width / 5, 10);
@@ -110,7 +119,13 @@ public class Breakout extends Application {
         
         powers = new ArrayList<Power>();
         bricks = new ArrayList<Brick>();
-        for(int k = 0; k < NUM_BRICKS; k++) {
+        try {
+			readLevel();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+        /*for(int k = 0; k < NUM_BRICKS; k++) {
         	Brick toAdd = new Brick(width / 11, height / 20, 2, 6);
         	bricks.add(toAdd); 			//Can add different colors/types here, for now, just base type w/ 1 durability
         	root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, -2 is permanent
@@ -121,8 +136,11 @@ public class Breakout extends Application {
         	
         	if(toAdd.getType() > 0) powers.add(new Power(toAdd.getType(), toAdd));
         	
+        }*/
+        for(int k = 0; k < bricks.size(); k++) {
+        	bricks.get(k).setX(k%10 * (XSIZE)/10 + (XSIZE) / 132);
+        	bricks.get(k).setY((int) k/10 * YSIZE / 12 + YSIZE / 60);
         }
-        
         
         scene.setOnKeyPressed(e -> handleKeyInput(e.getCode()));
         scene.setOnMouseClicked(e -> handleMouseInput(e.getX(), e.getY()));
@@ -328,6 +346,27 @@ public class Breakout extends Application {
     	right = KeyCode.RIGHT;
     }
     
+    private void readLevel() throws IOException{
+    	String str;
+    	while((str = br.readLine()) != null) {
+    		String[] brickCodes = str.split(" ");
+    		for(int k = 0; k < brickCodes.length; k++) {
+    			char[] code = brickCodes[k].toCharArray();
+    			int type = 0;
+    			if(code[0] == 'p') type = ThreadLocalRandom.current().nextInt(1, 4);
+    			else if(code[0] == 'd') type = ThreadLocalRandom.current().nextInt(4, 7);
+    			Brick toAdd = new Brick((XSIZE) / 11, YSIZE / 20, Character.getNumericValue(code[1]), type);
+    			bricks.add(toAdd);
+    			root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, -2 is permanent
+            	toAdd.setArcHeight(BRICK_CURVE);
+            	toAdd.setArcWidth(BRICK_CURVE);
+            	
+            	if(toAdd.getType() > 0) powers.add(new Power(toAdd.getType(), toAdd));
+    		}
+    	}
+    }
+    
+    
     private boolean loseLife() {		// returns true when game is over
     	resetControls();
     	for(int k = 2; k >= 0; k--) {
@@ -341,6 +380,7 @@ public class Breakout extends Application {
     					powers.remove(kk);
     				}
     			}
+    			paddle.setWidth((XSIZE-UI_SIZE)/5);
     			return false;
     		}
     	}
