@@ -4,6 +4,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -12,6 +13,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
@@ -30,18 +34,21 @@ public class Breakout extends Application {
     public static final int FRAMES_PER_SECOND = 100;
     public static final int MILLISECOND_DELAY = 1000 / FRAMES_PER_SECOND;
     public static final double SECOND_DELAY = 1.0 / FRAMES_PER_SECOND;
-    public static final Paint BACKGROUND = Color.AZURE;
-    public static final int MAX_PADDLE_SPEED = 200;
-    public static final int PADDLE_DRAG = 800;
-    public static final double INIT_BALL_SPEED = 250;
+    public static final Paint BACKGROUND = Color.rgb(243, 203, 111);
+    public static final int MAX_PADDLE_SPEED = 300;
+    public static final int PADDLE_DRAG = 3000;
+    public static final double INIT_BALL_SPEED = 300;
     public static final int NUM_BRICKS = 40;
     public static final int BALL_RADIUS = 5;
-    public static final int BRICK_CURVE = 5;
+    public static final int BRICK_CURVE = 2;
     public static final String HEART_IMAGE = "heart.png";
-    public static final Paint BALL_COLOR = Color.FORESTGREEN;
     public static final String POWER_UP_IMAGE = "extraballpower.gif";
     public static final String POWER_DOWN_IMAGE = "sizepower.gif";
     public static final double FALL_SPEED = 100;
+    public static final Color BRICK_COLOR_1 = Color.rgb(251, 139, 76);
+    public static final Color BRICK_COLOR_2 = Color.rgb(224, 98, 29);
+    public static final Color BRICK_COLOR_3 = Color.rgb(193, 68, 49);
+    public static final Color UI_COLOR = Color.rgb(87, 87, 91);
 
     
     private double paddleSpeed = 0;
@@ -61,7 +68,10 @@ public class Breakout extends Application {
 	private int scoreValue = 0;
 	private boolean sticky = false;
 	private ArrayList<Power> powers;
-    
+	private KeyCode left = KeyCode.LEFT;
+	private KeyCode right = KeyCode.RIGHT;
+    //private Rectangle splash;
+	
 	@Override
 	public void start (Stage stage) {
         myScene = setupGame(XSIZE + UI_SIZE, YSIZE, BACKGROUND);
@@ -93,7 +103,7 @@ public class Breakout extends Application {
         paddle.setX(width/2 - paddle.getBoundsInParent().getWidth()/2);
         paddle.setArcHeight(10);	//Globalify
         paddle.setArcWidth(20);
-        
+        paddle.setFill(UI_COLOR);
         
         balls.add(new Ball());
        
@@ -101,11 +111,11 @@ public class Breakout extends Application {
         powers = new ArrayList<Power>();
         bricks = new ArrayList<Brick>();
         for(int k = 0; k < NUM_BRICKS; k++) {
-        	Brick toAdd = new Brick(width / 12, 20, 2, 0);
+        	Brick toAdd = new Brick(width / 11, height / 20, 2, 6);
         	bricks.add(toAdd); 			//Can add different colors/types here, for now, just base type w/ 1 durability
         	root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, -2 is permanent
-        	toAdd.setX(k%10 * width/10 + width / 120);
-        	toAdd.setY((int) k/10 * height / 15);
+        	toAdd.setX(k%10 * width/10 + width / 132);
+        	toAdd.setY((int) k/10 * height / 12 + height / 60);
         	toAdd.setArcHeight(BRICK_CURVE);
         	toAdd.setArcWidth(BRICK_CURVE);
         	
@@ -119,7 +129,7 @@ public class Breakout extends Application {
         scene.setOnKeyReleased(e -> handleKeyRelease(e.getCode()));
         
         Rectangle uiPane = new Rectangle(width, 0, UI_SIZE, height);
-        uiPane.setFill(Color.DARKBLUE);
+        uiPane.setFill(UI_COLOR);
         score = new Label("Score\n0");
         score.setTextAlignment(TextAlignment.CENTER);
         score.setTextFill(Color.WHITE);
@@ -134,9 +144,22 @@ public class Breakout extends Application {
         hearts[2] = heart3;
         
         
+        Rectangle splash = new Rectangle(width, height);
+        splash.setFill(UI_COLOR);
+        splash.setOnMouseClicked(new EventHandler<MouseEvent>() {
+        	@Override
+        	public void handle(MouseEvent me) {
+        		splash.setOpacity(0);
+        	}
+        });
+        
+        
         root.getChildren().add(uiPane);
         root.getChildren().add(score);
         root.getChildren().addAll(heart1, heart2, heart3);
+        root.getChildren().add(splash);
+        
+        
         
         
         return scene;
@@ -212,6 +235,7 @@ public class Breakout extends Application {
         	}
         	
         	
+        	
         	if(active.getStuck()) active.stick();
         	
         	
@@ -219,19 +243,54 @@ public class Breakout extends Application {
             active.setCenterY(y + active.getSpeeds()[1] * elapsedTime);
             
     	}
-    	score.setText("Score\n" + scoreValue);
-    	for(Power p : powers) {
+    	for(int k = 0; k < powers.size(); k++) {
+    		Power p = powers.get(k);
     		if(p.getOwner().getDurability() == 0 && p.getSpeed() == 0) {p.startFall();}
     		p.updatePos(elapsedTime);
+    		if(paddle.getBoundsInParent().intersects(p.getBoundsInParent())) {
+    			root.getChildren().remove(p);
+    			powers.remove(k);
+    			if(p.getType() < 4) scoreValue += 200;
+    			else scoreValue -= 200;
+    			if(p.getType() == 1) balls.add(new Ball());
+    			else if(p.getType() == 2) {
+    					for(Ball b : balls) {
+    						b.setVelocity(b.getVelocity() * .75);
+    						if(b.getVelocity() < INIT_BALL_SPEED / 5) b.setVelocity(INIT_BALL_SPEED / 5);
+    						b.setSpeeds();
+    				    }
+    			} else if(p.getType() == 3) {
+    				double paddleXPos = paddle.getX() + paddle.getWidth()/2;
+    				paddle.setWidth(paddle.getWidth()*1.25);
+    				if(paddle.getWidth() > (XSIZE - UI_SIZE)/2) paddle.setWidth((XSIZE - UI_SIZE)/2);
+    				paddle.setX(paddleXPos - paddle.getWidth()/2);
+    			} else if(p.getType() == 4) {
+    				double paddleXPos = paddle.getX() + paddle.getWidth()/2;
+    				paddle.setWidth(paddle.getWidth()*.75);
+    				if(paddle.getWidth() < (XSIZE - UI_SIZE)/10) paddle.setWidth((XSIZE - UI_SIZE)/10);
+    				paddle.setX(paddleXPos - paddle.getWidth()/2);
+    			} else if(p.getType() == 5) {
+					for(Ball b : balls) {
+						b.setVelocity(b.getVelocity() * 1.25);
+						if(b.getVelocity() > INIT_BALL_SPEED * 3) b.setVelocity(INIT_BALL_SPEED * 3);
+						b.setSpeeds();
+				    }
+    			} else if(p.getType() == 6) {
+    				switchControls();
+    			}
+    		}
     	}
+    	
+    	score.setText("Score\n" + scoreValue);
+
 
     }
 
     private void handleKeyInput (KeyCode code) {
-        if (code == KeyCode.RIGHT) {
+        if (code == right) {
         	paddleSpeed = MAX_PADDLE_SPEED;
         	rightKeyHeld = true;
-        } else if (code == KeyCode.LEFT) {
+        } else if (code == left) {
         	paddleSpeed = -MAX_PADDLE_SPEED;
         	leftKeyHeld = true;
         } else if (code == KeyCode.SPACE) {
@@ -242,9 +301,9 @@ public class Breakout extends Application {
     }
     
     private void handleKeyRelease(KeyCode code) {
-    	if(code == KeyCode.RIGHT) {
+    	if(code == right) {
     		rightKeyHeld = false;
-    	} else if(code == KeyCode.LEFT) {
+    	} else if(code == left) {
     		leftKeyHeld = false;
     	} else if(code == KeyCode.SPACE) {
     		for(Ball b : balls) {
@@ -259,12 +318,29 @@ public class Breakout extends Application {
         
     }
 
+    private void switchControls() {
+    	left = KeyCode.RIGHT;
+    	right = KeyCode.LEFT;
+    }
+    
+    private void resetControls() {
+    	left = KeyCode.LEFT;
+    	right = KeyCode.RIGHT;
+    }
+    
     private boolean loseLife() {		// returns true when game is over
+    	resetControls();
     	for(int k = 2; k >= 0; k--) {
     		if(hearts[k].isActive()) {
     			hearts[k].setActive(false);
     			root.getChildren().remove(hearts[k]);
     			if(k == 0) return true;
+    			for(int kk = 0; kk < powers.size(); kk++) {
+    				if(powers.get(kk).getSpeed() != 0) {
+    					root.getChildren().remove(powers.get(kk));
+    					powers.remove(kk);
+    				}
+    			}
     			return false;
     		}
     	}
@@ -299,7 +375,10 @@ public class Breakout extends Application {
     	}
     	
     	public void rePaint() {
-    		this.setFill(Color.rgb(ThreadLocalRandom.current().nextInt(256-80*durability,256-80*(durability-1)),ThreadLocalRandom.current().nextInt(256-80*durability,256-80*(durability-1)),ThreadLocalRandom.current().nextInt(256-80*durability,256-80*(durability-1))));
+    		if(durability == 1) this.setFill(BRICK_COLOR_1);
+    		else if(durability == 2) this.setFill(BRICK_COLOR_2);
+    		else if(durability == 3) this.setFill(BRICK_COLOR_3);
+
     	}
     	
     	public int getDurability() {return durability;}
@@ -309,7 +388,7 @@ public class Breakout extends Application {
     
     private class Ball extends Circle {
     	public Ball() {
-    		super(BALL_RADIUS, BALL_COLOR);
+    		super(BALL_RADIUS, UI_COLOR);
     		velocity = INIT_BALL_SPEED;
     		angle = 3*pi/2;
     		speeds = new double[2];
@@ -372,6 +451,10 @@ public class Breakout extends Application {
     		speeds[1] = 0;
     		stuck = true;
     	}
+    	
+    	public void setVelocity(double vel) {velocity = vel;}
+    	
+    	public double getVelocity() {return velocity;}
     	
     	public double[] getSpeeds() {return speeds;}
     	
