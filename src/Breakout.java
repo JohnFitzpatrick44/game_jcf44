@@ -74,6 +74,7 @@ public class Breakout extends Application {
 	private KeyCode left = KeyCode.LEFT;
 	private KeyCode right = KeyCode.RIGHT;
 	private BufferedReader br;
+	private int lives = 3;
 	
 	@Override
 	public void start (Stage stage) {
@@ -100,48 +101,15 @@ public class Breakout extends Application {
         	DataInputStream in = new DataInputStream(fstream);
         	br = new BufferedReader(new InputStreamReader(in));
         } catch(FileNotFoundException e) {e.printStackTrace();}
-        
-        balls = new ArrayList<Ball>();
-        
-        paddle = new Rectangle(width / 5, 10);
-        
-        
-        root.getChildren().add(paddle);
-        
-        paddle.setY(height - 2*paddle.getBoundsInParent().getHeight());
-        paddle.setX(width/2 - paddle.getBoundsInParent().getWidth()/2);
+        paddle = new Rectangle((XSIZE) / 5, 10);
         paddle.setArcHeight(10);	//Globalify
         paddle.setArcWidth(20);
         paddle.setFill(UI_COLOR);
         
-        balls.add(new Ball());
-       
-        
-        powers = new ArrayList<Power>();
-        bricks = new ArrayList<Brick>();
-        try {
-			readLevel();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-        /*for(int k = 0; k < NUM_BRICKS; k++) {
-        	Brick toAdd = new Brick(width / 11, height / 20, 2, 6);
-        	bricks.add(toAdd); 			//Can add different colors/types here, for now, just base type w/ 1 durability
-        	root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, -2 is permanent
-        	toAdd.setX(k%10 * width/10 + width / 132);
-        	toAdd.setY((int) k/10 * height / 12 + height / 60);
-        	toAdd.setArcHeight(BRICK_CURVE);
-        	toAdd.setArcWidth(BRICK_CURVE);
-        	
-        	if(toAdd.getType() > 0) powers.add(new Power(toAdd.getType(), toAdd));
-        	
-        }*/
-        for(int k = 0; k < bricks.size(); k++) {
-        	bricks.get(k).setX(k%10 * (XSIZE)/10 + (XSIZE) / 132);
-        	bricks.get(k).setY((int) k/10 * YSIZE / 12 + YSIZE / 60);
-        }
-        
+        balls = new ArrayList<Ball>();
+                
+        root.getChildren().add(paddle);
+
         scene.setOnKeyPressed(e -> handleKeyInput(e.getCode()));
         scene.setOnMouseClicked(e -> handleMouseInput(e.getX(), e.getY()));
         scene.setOnKeyReleased(e -> handleKeyRelease(e.getCode()));
@@ -153,14 +121,6 @@ public class Breakout extends Application {
         score.setTextFill(Color.WHITE);
         score.setLayoutY(height / 20);
         score.setStyle("-fx-font: 20 arial;");
-        
-        Life heart1 = new Life(1);
-        Life heart2 = new Life(2);
-        Life heart3 = new Life(3);
-        hearts[0] = heart1;
-        hearts[1] = heart2;
-        hearts[2] = heart3;
-        
         
         Rectangle splash = new Rectangle(width, height);
         splash.setFill(UI_COLOR);
@@ -174,12 +134,17 @@ public class Breakout extends Application {
         
         root.getChildren().add(uiPane);
         root.getChildren().add(score);
+        Life heart1 = new Life(1);
+        Life heart2 = new Life(2);
+        Life heart3 = new Life(3);
+        hearts[0] = heart1;
+        hearts[1] = heart2;
+        hearts[2] = heart3;
         root.getChildren().addAll(heart1, heart2, heart3);
+        setField();
+
         root.getChildren().add(splash);
-        
-        
-        
-        
+
         return scene;
     }
 
@@ -252,6 +217,8 @@ public class Breakout extends Application {
         		
         	}
         	
+        	if(bricks.size() == 0) nextLevel();
+        	
         	
         	
         	if(active.getStuck()) active.stick();
@@ -280,12 +247,12 @@ public class Breakout extends Application {
     			} else if(p.getType() == 3) {
     				double paddleXPos = paddle.getX() + paddle.getWidth()/2;
     				paddle.setWidth(paddle.getWidth()*1.25);
-    				if(paddle.getWidth() > (XSIZE - UI_SIZE)/2) paddle.setWidth((XSIZE - UI_SIZE)/2);
+    				if(paddle.getWidth() > (XSIZE)/2) paddle.setWidth((XSIZE)/2);
     				paddle.setX(paddleXPos - paddle.getWidth()/2);
     			} else if(p.getType() == 4) {
     				double paddleXPos = paddle.getX() + paddle.getWidth()/2;
     				paddle.setWidth(paddle.getWidth()*.75);
-    				if(paddle.getWidth() < (XSIZE - UI_SIZE)/10) paddle.setWidth((XSIZE - UI_SIZE)/10);
+    				if(paddle.getWidth() < (XSIZE)/10) paddle.setWidth((XSIZE)/10);
     				paddle.setX(paddleXPos - paddle.getWidth()/2);
     			} else if(p.getType() == 5) {
 					for(Ball b : balls) {
@@ -350,6 +317,7 @@ public class Breakout extends Application {
     	String str;
     	while((str = br.readLine()) != null) {
     		String[] brickCodes = str.split(" ");
+    		if(brickCodes[0].equals("-")) return;
     		for(int k = 0; k < brickCodes.length; k++) {
     			char[] code = brickCodes[k].toCharArray();
     			int type = 0;
@@ -366,25 +334,61 @@ public class Breakout extends Application {
     	}
     }
     
-    
     private boolean loseLife() {		// returns true when game is over
     	resetControls();
     	for(int k = 2; k >= 0; k--) {
     		if(hearts[k].isActive()) {
     			hearts[k].setActive(false);
     			root.getChildren().remove(hearts[k]);
-    			if(k == 0) return true;
+    			
     			for(int kk = 0; kk < powers.size(); kk++) {
     				if(powers.get(kk).getSpeed() != 0) {
     					root.getChildren().remove(powers.get(kk));
     					powers.remove(kk);
     				}
     			}
-    			paddle.setWidth((XSIZE-UI_SIZE)/5);
+    			paddle.setWidth((XSIZE)/5);
     			return false;
     		}
     	}
     	return true;
+    }
+    
+    private void setField() {
+
+    	
+        paddle.setY(YSIZE - 2*paddle.getBoundsInParent().getHeight());
+        paddle.setX(XSIZE/2 - paddle.getBoundsInParent().getWidth()/2);
+        paddle.setWidth((XSIZE) / 5);
+        paddle.setHeight(10);
+        balls.add(new Ball());
+        powers = new ArrayList<Power>();
+        bricks = new ArrayList<Brick>();
+        try {
+			readLevel();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+        for(int k = 0; k < bricks.size(); k++) {
+        	bricks.get(k).setX(k%10 * (XSIZE)/10 + (XSIZE) / 132);
+        	bricks.get(k).setY((int) k/10 * YSIZE / 12 + YSIZE / 60);
+        }
+        
+        
+        if(bricks.size() == 0) System.exit(1);
+        
+    }
+
+    private void nextLevel() {
+    	for(int k = balls.size()-1; k >= 0; k--) {
+    		root.getChildren().remove(balls.get(k));
+    		balls.remove(k);
+    	}
+    	for(int k = powers.size()-1; k >= 0; k--) {
+    		root.getChildren().remove(powers.get(k));
+    		powers.remove(k);
+    	}
+    	setField();
     }
     
     public static void main (String[] args) {
