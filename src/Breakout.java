@@ -13,15 +13,18 @@ import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -29,8 +32,8 @@ import javafx.util.Duration;
 public class Breakout extends Application {
 	
 	public static final String TITLE = "Breakout";
-    public static final int XSIZE = 600;
-    public static final int YSIZE = 400;
+    public static final int XSIZE = 800;
+    public static final int YSIZE = 600;
     public static final int UI_SIZE = 100;
     public static final int FRAMES_PER_SECOND = 100;
     public static final int MILLISECOND_DELAY = 1000 / FRAMES_PER_SECOND;
@@ -38,15 +41,15 @@ public class Breakout extends Application {
     public static final Paint BACKGROUND = Color.rgb(243, 203, 111);
     public static final int MAX_PADDLE_SPEED = 300;
     public static final int PADDLE_DRAG = 3000;
-    public static final double INIT_BALL_SPEED = 300;
+    public static final double INIT_BALL_SPEED = 400;
     public static final int NUM_BRICKS = 40;
     public static final int BALL_RADIUS = 5;
     public static final int BRICK_CURVE = 2;
     public static final String HEART_IMAGE = "heart.png";
     public static final String POWER_UP_IMAGE = "extraballpower.gif";
     public static final String POWER_DOWN_IMAGE = "sizepower.gif";
-    public static final String LEVEL_FILE = "LevelFile2.txt";
-    public static final double FALL_SPEED = 100;
+    public static final String LEVEL_FILE = "LevelFile1.txt";
+    public static final double FALL_SPEED = 300;
     public static final Color BRICK_COLOR_1 = Color.rgb(251, 139, 76);
     public static final Color BRICK_COLOR_2 = Color.rgb(224, 98, 29);
     public static final Color BRICK_COLOR_3 = Color.rgb(193, 68, 49);
@@ -66,7 +69,7 @@ public class Breakout extends Application {
 	private Image heart = new Image(getClass().getClassLoader().getResourceAsStream(HEART_IMAGE));
 	private Image powerUp = new Image(getClass().getClassLoader().getResourceAsStream(POWER_UP_IMAGE));
 	private Image powerDown = new Image(getClass().getClassLoader().getResourceAsStream(POWER_DOWN_IMAGE));
-	
+	private int numPermanents = 0;
 	private Life[] hearts = new Life[3];
 	private int scoreValue = 0;
 	private boolean sticky = false;
@@ -74,7 +77,6 @@ public class Breakout extends Application {
 	private KeyCode left = KeyCode.LEFT;
 	private KeyCode right = KeyCode.RIGHT;
 	private BufferedReader br;
-	private int lives = 3;
 	
 	@Override
 	public void start (Stage stage) {
@@ -95,7 +97,6 @@ public class Breakout extends Application {
         root = new Group();
         Scene scene = new Scene(root, width, height, background);
         width -= UI_SIZE;
-        
         try{ 
         	FileInputStream fstream = new FileInputStream(LEVEL_FILE);
         	DataInputStream in = new DataInputStream(fstream);
@@ -123,17 +124,31 @@ public class Breakout extends Application {
         score.setStyle("-fx-font: 20 arial;");
         
         Rectangle splash = new Rectangle(width, height);
+        Text howTo = new Text("How to Play");
+        Text instructions = new Text("-Bounce the ball off the paddle to break the bricks!\n-Press space to start\n-Hold space to make the paddle sticky\n-Release space to release the ball\n-Break all the bricks to win! You have 3 lives\n-Check out the README for cheats\n\nHave Fun!");
+        howTo.setFill(Color.WHITE);
+        instructions.setFill(Color.WHITE);
+        howTo.setStyle("-fx-font: 32 arial;");
+        instructions.setStyle("-fx-font: 24 arial;");
+        howTo.setTextAlignment(TextAlignment.CENTER);
+        instructions.setTextAlignment(TextAlignment.LEFT);
+       
         splash.setFill(UI_COLOR);
-        splash.setOnMouseClicked(new EventHandler<MouseEvent>() {
+        scene.setOnKeyTyped(new EventHandler<KeyEvent>() {
         	@Override
-        	public void handle(MouseEvent me) {
+        	public void handle(KeyEvent ke) {
         		splash.setOpacity(0);
+        		howTo.setOpacity(0);
+        		instructions.setOpacity(0);
+        		
         	}
         });
-        
-        
+       
+
+
         root.getChildren().add(uiPane);
         root.getChildren().add(score);
+        
         Life heart1 = new Life(1);
         Life heart2 = new Life(2);
         Life heart3 = new Life(3);
@@ -142,20 +157,36 @@ public class Breakout extends Application {
         hearts[2] = heart3;
         root.getChildren().addAll(heart1, heart2, heart3);
         setField();
-
+        
         root.getChildren().add(splash);
-
+        root.getChildren().add(howTo);
+        root.getChildren().add(instructions);
+        
+        howTo.setX((XSIZE-UI_SIZE) / 2 - howTo.getBoundsInParent().getWidth()/2);
+        instructions.setX((XSIZE-UI_SIZE)/2 - instructions.getBoundsInParent().getWidth()/2);
+        howTo.setY(YSIZE / 3);
+        instructions.setY(YSIZE/3 + howTo.getBoundsInParent().getHeight() * 2);
+        
         return scene;
     }
 
     private void step (double elapsedTime) {
     	
-    	double w = myScene.getWidth() - UI_SIZE;
-    	double h = myScene.getHeight();
+    	
+    	updatePaddle(elapsedTime);
+    	
+    	updateBalls(elapsedTime);
+    	
+    	updatePowers(elapsedTime);
+    	
+    	score.setText("Score\n" + scoreValue);
+
+
+    }
+
+    private void updatePaddle(double elapsedTime) {
     	double xp = paddle.getX();
-    	
-    	
-    	
+    	double w = myScene.getWidth() - UI_SIZE;
         if(paddleSpeed > 0 && !rightKeyHeld) {
         	paddleSpeed -= PADDLE_DRAG * elapsedTime;
         	paddleSpeed = Math.max(0, paddleSpeed);
@@ -170,8 +201,11 @@ public class Breakout extends Application {
     	} else {
     		paddle.setX(xp + elapsedTime*paddleSpeed);
     	}
-    	
-    	
+    }
+    
+    private void updateBalls(double elapsedTime) {
+    	double w = myScene.getWidth() - UI_SIZE;
+    	double h = myScene.getHeight();
     	for(int k = 0; k < balls.size(); k++) {
         	
     		Ball active = balls.get(k);
@@ -179,54 +213,38 @@ public class Breakout extends Application {
         	double y = active.getCenterY();
         	double r = BALL_RADIUS;
     		
-        	if(x + r >= w) active.bounceX(-1); 
-        	else if(x - r < 0) active.bounceX(1);
+        	if(!active.getStuck()) {
+        		if(x + r >= w) active.bounceX(-1); 
+        		else if(x - r < 0) active.bounceX(1);
             
-        	if(y - r >= h) {
-        		balls.remove(k);
-        		if(balls.isEmpty()) {
-        			if(loseLife()) System.exit(1);		// LOSE LIFE
-        			balls.add(new Ball());
-        		}
-        	} else if(y - r < 0) {
-        		active.bounceY();
+        		if(y - r >= h) {
+        			balls.remove(k);
+	        		if(balls.isEmpty()) {
+	        			if(loseLife()) gameOver();		// LOSE LIFE
+	        			balls.add(new Ball());
+	        		}
+	        	} else if(y - r < 0) {
+	        		active.bounceY();
+	        	}
+        		if(active.getBoundsInParent().intersects(paddle.getBoundsInParent())) {
+            		if(y + r > paddle.getY() || y > paddle.getY() + paddle.getHeight()/2) active.setAngle((((x-(paddle.getX()+paddle.getWidth()/2))/paddle.getWidth()-0.5)*pi*.6)-0.2*pi);
+            		if(sticky) active.setStuck(true);
+            	}
         	}
         	
-        	if(active.getBoundsInParent().intersects(paddle.getBoundsInParent())) {
-        		if(y + r > paddle.getY() || y > paddle.getY() + paddle.getHeight()/2) active.setAngle((((x-(paddle.getX()+paddle.getWidth()/2))/paddle.getWidth()-0.5)*pi*.6)-0.2*pi);
-        		if(sticky) active.setStuck(true);
-        	}
+        	active.checkBrickCollisions();
         	
-        	for(int kk = 0; kk < bricks.size(); kk++) {
-        		Brick b = bricks.get(kk);
-        		
-        		if(b.getBoundsInParent().intersects(active.getBoundsInParent())) {
-        			scoreValue += 10;
-        			if(b.reduceDurability() == 0) scoreValue+=90;
-        			if(x > b.getX() + b.getWidth()) active.bounceX(1);
-        			else if(x < b.getX()) active.bounceX(-1);
-        			if(y > b.getY() + b.getHeight()) active.bounceY(1);
-        			else if(y < b.getY()) active.bounceY(-1);
-        			
-        		}
-        		if(b.getDurability() <= 0) {
-    				root.getChildren().remove(b);
-    				bricks.remove(kk);
-    			}
-        		
-        	}
-        	
-        	if(bricks.size() == 0) nextLevel();
-        	
-        	
+        	if(bricks.size() - numPermanents == 0) nextLevel();
         	
         	if(active.getStuck()) active.stick();
-        	
         	
         	active.setCenterX(x + active.getSpeeds()[0] * elapsedTime);
             active.setCenterY(y + active.getSpeeds()[1] * elapsedTime);
             
     	}
+    }
+    
+    private void updatePowers(double elapsedTime) {
     	for(int k = 0; k < powers.size(); k++) {
     		Power p = powers.get(k);
     		if(p.getOwner().getDurability() == 0 && p.getSpeed() == 0) {p.startFall();}
@@ -236,40 +254,11 @@ public class Breakout extends Application {
     			powers.remove(k);
     			if(p.getType() < 4) scoreValue += 200;
     			else scoreValue -= 200;
-    			if(p.getType() == 1) balls.add(new Ball());
-    			else if(p.getType() == 2) {
-    					for(Ball b : balls) {
-    						b.setVelocity(b.getVelocity() * .75);
-    						if(b.getVelocity() < INIT_BALL_SPEED / 5) b.setVelocity(INIT_BALL_SPEED / 5);
-    						b.setSpeeds();
-    				    }
-    			} else if(p.getType() == 3) {
-    				double paddleXPos = paddle.getX() + paddle.getWidth()/2;
-    				paddle.setWidth(paddle.getWidth()*1.25);
-    				if(paddle.getWidth() > (XSIZE)/2) paddle.setWidth((XSIZE)/2);
-    				paddle.setX(paddleXPos - paddle.getWidth()/2);
-    			} else if(p.getType() == 4) {
-    				double paddleXPos = paddle.getX() + paddle.getWidth()/2;
-    				paddle.setWidth(paddle.getWidth()*.75);
-    				if(paddle.getWidth() < (XSIZE)/10) paddle.setWidth((XSIZE)/10);
-    				paddle.setX(paddleXPos - paddle.getWidth()/2);
-    			} else if(p.getType() == 5) {
-					for(Ball b : balls) {
-						b.setVelocity(b.getVelocity() * 1.25);
-						if(b.getVelocity() > INIT_BALL_SPEED * 3) b.setVelocity(INIT_BALL_SPEED * 3);
-						b.setSpeeds();
-				    }
-    			} else if(p.getType() == 6) {
-    				switchControls();
-    			}
+    			p.trigger();
     		}
     	}
-    	
-    	score.setText("Score\n" + scoreValue);
-
-
     }
-
+    
     private void handleKeyInput (KeyCode code) {
         if (code == right) {
         	paddleSpeed = MAX_PADDLE_SPEED;
@@ -298,6 +287,7 @@ public class Breakout extends Application {
     	}
 	}
 
+    
     private void handleMouseInput (double x, double y) {
         
     }
@@ -324,7 +314,8 @@ public class Breakout extends Application {
     			else if(code[0] == 'd') type = ThreadLocalRandom.current().nextInt(4, 7);
     			Brick toAdd = new Brick((XSIZE) / 11, YSIZE / 20, Character.getNumericValue(code[1]), type);
     			bricks.add(toAdd);
-    			root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, -2 is permanent
+    			root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, durability 4 is permanent
+    			if(toAdd.getDurability() >= 4) numPermanents += 1;
             	toAdd.setArcHeight(BRICK_CURVE);
             	toAdd.setArcWidth(BRICK_CURVE);
             	
@@ -334,7 +325,7 @@ public class Breakout extends Application {
     	gameOver();
     }
     
-    private boolean loseLife() {		// returns true when game is over
+    private boolean loseLife() {
     	resetControls();
     	for(int k = 2; k >= 0; k--) {
     		if(hearts[k].isActive()) {
@@ -370,7 +361,7 @@ public class Breakout extends Application {
 			e1.printStackTrace();
 		}
         for(int k = 0; k < bricks.size(); k++) {
-        	bricks.get(k).setX(k%10 * (XSIZE)/10 + (XSIZE) / 132);
+        	bricks.get(k).setX(k%10 * (XSIZE)/10 + (XSIZE) / 264);
         	bricks.get(k).setY((int) k/10 * YSIZE / 12 + YSIZE / 60);
         }
                 
@@ -379,13 +370,44 @@ public class Breakout extends Application {
     private void gameOver() {
     	Rectangle gameOverScreen = new Rectangle(XSIZE, YSIZE);
         gameOverScreen.setFill(UI_COLOR);
-        gameOverScreen.setOnMouseClicked(new EventHandler<MouseEvent>() {
+        Button retryButton = new Button("Retry");
+        Button exitButton = new Button("Exit");
+        
+        retryButton.setPrefWidth(XSIZE/10);
+        retryButton.setPrefHeight(YSIZE/10);
+        retryButton.setLayoutX(XSIZE/3 - retryButton.getWidth() / 2);
+        retryButton.setLayoutY(2*YSIZE/3);
+        retryButton.setOnMousePressed(new EventHandler<MouseEvent> () {
         	@Override
-        	public void handle(MouseEvent me) {
+        	public void handle(MouseEvent ae) {
+        		
+        	}
+        });
+        
+        
+        
+        exitButton.setPrefWidth(XSIZE/10);
+        exitButton.setPrefHeight(YSIZE/10);
+        exitButton.setLayoutX(2*XSIZE/3 - exitButton.getWidth() / 2);
+        exitButton.setLayoutY(2*YSIZE/3);
+        exitButton.setOnMousePressed(new EventHandler<MouseEvent> () {
+        	@Override
+        	public void handle(MouseEvent ae) {
         		System.exit(1);
         	}
         });
+        
         root.getChildren().add(gameOverScreen);
+        root.getChildren().add(retryButton);
+        root.getChildren().add(exitButton);
+        score.toFront();
+        
+        score.setStyle("-fx-font: 54 arial;");
+        score.setLayoutX(XSIZE / 2 - score.getBoundsInParent().getWidth()/4);
+        for(Life l : hearts) {
+        	if(l.isActive()) root.getChildren().remove(l);
+        }
+        
     }
     
     private void nextLevel() {
@@ -397,9 +419,17 @@ public class Breakout extends Application {
     		root.getChildren().remove(powers.get(k));
     		powers.remove(k);
     	}
+    	for(int k = bricks.size()-1; k >= 0; k--) {
+    		root.getChildren().remove(bricks.get(k));
+    		bricks.remove(k);
+    	}
     	setField();
     }
     
+    
+    
+    
+
     public static void main (String[] args) {
         launch(args);
     }
@@ -422,7 +452,10 @@ public class Breakout extends Application {
     	}
     	
     	public int reduceDurability() {
-    		durability --;
+    		if(durability <= 3) {
+    			durability --;
+    			scoreValue += 10;
+    		}
     		if(durability != 0) rePaint();
     		return durability;
     	}
@@ -431,6 +464,7 @@ public class Breakout extends Application {
     		if(durability == 1) this.setFill(BRICK_COLOR_1);
     		else if(durability == 2) this.setFill(BRICK_COLOR_2);
     		else if(durability == 3) this.setFill(BRICK_COLOR_3);
+    		else if(durability == 4) this.setFill(UI_COLOR);
 
     	}
     	
@@ -502,7 +536,28 @@ public class Breakout extends Application {
     	public void stick() {
     		speeds[0] = paddleSpeed;
     		speeds[1] = 0;
+    		if(paddle.getX() <= 0 || paddle.getX() + paddle.getWidth() >= XSIZE) speeds[0] = 0;
     		stuck = true;
+    	}
+    	
+    	public void checkBrickCollisions() {
+    		for(int k = 0; k < bricks.size(); k++) {
+        		Brick b = bricks.get(k);
+        		
+        		if(b.getBoundsInParent().intersects(getBoundsInParent())) {
+        			if(b.reduceDurability() == 0) scoreValue+=90;
+        			if(getCenterX() > b.getX() + b.getWidth()) bounceX(1);
+        			else if(getCenterX() < b.getX()) bounceX(-1);
+        			if(getCenterY() > b.getY() + b.getHeight()) bounceY(1);
+        			else if(getCenterY() < b.getY()) bounceY(-1);
+        			
+        		}
+        		if(b.getDurability() <= 0) {
+    				root.getChildren().remove(b);
+    				bricks.remove(k);
+    			}
+        		
+        	}
     	}
     	
     	public void setVelocity(double vel) {velocity = vel;}
@@ -564,6 +619,35 @@ public class Breakout extends Application {
     		}
     	}
     	
+    	public void trigger() {
+    		if(type == 1) balls.add(new Ball());
+			else if(type == 2) {
+					for(Ball b : balls) {
+						b.setVelocity(b.getVelocity() * .75);
+						if(b.getVelocity() < INIT_BALL_SPEED / 5) b.setVelocity(INIT_BALL_SPEED / 5);
+						b.setSpeeds();
+				    }
+			} else if(type == 3) {
+				double paddleXPos = paddle.getX() + paddle.getWidth()/2;
+				paddle.setWidth(paddle.getWidth()*1.25);
+				if(paddle.getWidth() > (XSIZE)/2) paddle.setWidth((XSIZE)/2);
+				paddle.setX(paddleXPos - paddle.getWidth()/2);
+			} else if(type == 4) {
+				double paddleXPos = paddle.getX() + paddle.getWidth()/2;
+				paddle.setWidth(paddle.getWidth()*.75);
+				if(paddle.getWidth() < (XSIZE)/10) paddle.setWidth((XSIZE)/10);
+				paddle.setX(paddleXPos - paddle.getWidth()/2);
+			} else if(type == 5) {
+				for(Ball b : balls) {
+					b.setVelocity(b.getVelocity() * 1.25);
+					if(b.getVelocity() > INIT_BALL_SPEED * 3) b.setVelocity(INIT_BALL_SPEED * 3);
+					b.setSpeeds();
+			    }
+			} else if(type == 6) {
+				switchControls();
+			}
+    	}
+    	
     	public void startFall() {speed = FALL_SPEED;}
     	
     	public double getSpeed() {return speed;}
@@ -571,6 +655,7 @@ public class Breakout extends Application {
     	public int getType() {return type;}
     	
     	public Brick getOwner() {return owner;}
+    	
     }
     
     
