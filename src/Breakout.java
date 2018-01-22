@@ -11,7 +11,9 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.EventHandler;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -20,6 +22,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
@@ -82,6 +86,7 @@ public class Breakout extends Application {
 	private int currentLevel = 0;
 	private Paddle paddle;
 	private boolean movable = false;
+	private boolean gameDone = false;
 	
 	
 	@Override
@@ -192,6 +197,7 @@ public class Breakout extends Application {
         		if(movable) movableButton.setText("ON");
         		else movableButton.setText("OFF");
         		root.requestFocus();
+                
         	}
         });	
         
@@ -203,6 +209,7 @@ public class Breakout extends Application {
 	
     private void step (double elapsedTime) {
     	
+    	if(gameDone) return;
     	
     	updatePaddle(elapsedTime);
     	
@@ -334,13 +341,7 @@ public class Breakout extends Application {
         } else if (code == KeyCode.UP) {
         	if(paddle.getYSpeed() == 0) paddle.setYSpeed(-FALL_SPEED);
         } else if (code == KeyCode.L) {
-        	for(Life heart : hearts) {
-        		if(!heart.isActive()) {
-        			heart.setActive(true);
-        			root.getChildren().add(heart);
-        			break;
-        		}
-        	}
+        	resetLives();
         } else if (code == KeyCode.P) {
         	nextLevel();
         } else if (code == KeyCode.EQUALS) {
@@ -421,12 +422,13 @@ public class Breakout extends Application {
     
     private void readLevel() throws IOException{
     	String str;
+    	numPermanents = 0;
     	while((str = br.readLine()) != null) {
     		String[] brickCodes = str.split(" ");
     		if(brickCodes[0].equals("-")) {
     			currentLevel ++;
     			return;
-    			}
+    		}
     		for(int k = 0; k < brickCodes.length; k++) {
     			char[] code = brickCodes[k].toCharArray();
     			int type = 0;
@@ -436,7 +438,7 @@ public class Breakout extends Application {
     			Brick toAdd = new Brick((XSIZE) / 11, YSIZE / 20, Character.getNumericValue(code[1]), type);
     			bricks.add(toAdd);
     			root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, durability 4 is permanent
-    			if(toAdd.getDurability() >= 4 && toAdd.getDurability() < 7) numPermanents += 1;
+    			if(toAdd.getDurability() >= 4 && toAdd.getType() < 7) numPermanents += 1;
             	toAdd.setArcHeight(BRICK_CURVE);
             	toAdd.setArcWidth(BRICK_CURVE);
             	
@@ -476,29 +478,34 @@ public class Breakout extends Application {
     	return true;
     }
     
+    private void resetLives() {
+    	for(Life heart : hearts) {
+    		if(!heart.isActive()) {
+    			heart.setActive(true);
+    			root.getChildren().add(heart);
+    		}
+    	}
+    }
+    
     private void gameOver() {
-    	Rectangle gameOverScreen = new Rectangle(XSIZE, YSIZE);
+    	gameDone = true;
+    	ArrayList<Node> gameOverPane = new ArrayList<Node>();
+    	Rectangle gameOverScreen = new Rectangle(XSIZE + UI_SIZE, YSIZE);
         gameOverScreen.setFill(COLOR_PALETTE[3]);
         Button retryButton = new Button("Retry");
         Button exitButton = new Button("Exit");
         
-        retryButton.setPrefWidth(XSIZE/10);
-        retryButton.setPrefHeight(YSIZE/10);
-        retryButton.setLayoutX(XSIZE/3 - retryButton.getWidth() / 2);
-        retryButton.setLayoutY(2*YSIZE/3);
         retryButton.setOnMousePressed(new EventHandler<MouseEvent> () {
         	@Override
         	public void handle(MouseEvent ae) {
-        		
+        		resetLives();
+        		scoreValue = 0;
+        		jumpLevel(1);
+        		gameDone = false;
+        		root.getChildren().removeAll(gameOverPane);
         	}
         });
         
-        
-        
-        exitButton.setPrefWidth(XSIZE/10);
-        exitButton.setPrefHeight(YSIZE/10);
-        exitButton.setLayoutX(2*XSIZE/3 - exitButton.getWidth() / 2);
-        exitButton.setLayoutY(2*YSIZE/3);
         exitButton.setOnMousePressed(new EventHandler<MouseEvent> () {
         	@Override
         	public void handle(MouseEvent ae) {
@@ -506,17 +513,21 @@ public class Breakout extends Application {
         	}
         });
         
-        root.getChildren().add(gameOverScreen);
-        root.getChildren().add(retryButton);
-        root.getChildren().add(exitButton);
-        score.toFront();
-        level.toFront();
         
-        score.setStyle("-fx-font: 54 arial;");
-        score.setLayoutX(XSIZE / 2 - score.getBoundsInParent().getWidth()/4);
         for(Life l : hearts) {
         	if(l.isActive()) root.getChildren().remove(l);
         }
+        
+        gameOverPane.add(gameOverScreen);
+        gameOverPane.add(retryButton);
+        gameOverPane.add(exitButton);
+       
+        
+        
+        
+        
+        root.getChildren().addAll(gameOverPane);
+        
         
     }
     
