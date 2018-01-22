@@ -95,8 +95,7 @@ public class Breakout extends Application {
         stage.setScene(myScene);
         stage.setTitle(TITLE);
         stage.show();
-        score.setLayoutX(XSIZE + UI_SIZE / 2 - score.getWidth() / 2);
-        level.setLayoutX(XSIZE + UI_SIZE / 2 - level.getWidth() / 2);
+        
         KeyFrame frame = new KeyFrame(Duration.millis(MILLISECOND_DELAY),
                                       e -> step(SECOND_DELAY));
         Timeline animation = new Timeline();
@@ -123,73 +122,91 @@ public class Breakout extends Application {
         return scene;
     }
 
-	private void setUI(Scene scene) {
-		Rectangle uiPane = new Rectangle(XSIZE, 0, UI_SIZE, YSIZE);
-        uiPane.setFill(COLOR_PALETTE[3]);
-        score = new Label("Score\n0");
-        score.setTextAlignment(TextAlignment.CENTER);
-        score.setTextFill(Color.WHITE);
-        score.setLayoutY(YSIZE / 20);
-        score.setStyle("-fx-font: 20 arial;");
+	private void setSplash(Scene scene) {
+		ArrayList<Node> uiNodes = new ArrayList<Node>();
         
-        level = new Label("Level\n0");
-        level.setTextAlignment(TextAlignment.CENTER);
-        level.setTextFill(Color.WHITE);
-        level.setLayoutY(YSIZE / 2);
-        level.setStyle("-fx-font: 20 arial;");
-        
-        Rectangle splash = new Rectangle(XSIZE, YSIZE);
-        Text howTo = new Text("How to Play");
-        Text instructions = new Text("-Bounce the ball off the paddle to break the bricks!\n-Press space to start\n-Hold space to make the paddle sticky\n-Release space to release the ball\n-Break all the bricks to win! You have 3 lives\n-Check out the README for cheats\n\nHave Fun!");
-        howTo.setFill(Color.WHITE);
-        instructions.setFill(Color.WHITE);
-        howTo.setStyle("-fx-font: 32 arial;");
-        instructions.setStyle("-fx-font: 24 arial;");
-        howTo.setTextAlignment(TextAlignment.CENTER);
-        instructions.setTextAlignment(TextAlignment.LEFT);
-       
+        Rectangle splash = new Rectangle(XSIZE+UI_SIZE, YSIZE);
+        Label howTo = new Label("How to Play");
+        Label instructions = new Label("Bounce the ball off the paddle to break the bricks!\n"
+        		+ "Press space to start.\n"
+        		+ "Use the left and right arrows to move the paddle.\n"
+        		+ "Hold space to make the paddle sticky.\n"
+        		+ "Release space to release the ball.\n"
+        		+ "Break all the bricks to win! You have 3 lives.\n"
+        		+ "Check out the README for cheats.\n\nHave Fun!");
+        howTo.setTextFill(Color.WHITE);
+        instructions.setTextFill(Color.WHITE);
         splash.setFill(COLOR_PALETTE[3]);
+        
+        howTo.setAlignment(Pos.CENTER);
+        instructions.setAlignment(Pos.CENTER);
+        howTo.setTextAlignment(TextAlignment.CENTER);
+        instructions.setTextAlignment(TextAlignment.CENTER);
+        
+        howTo.setStyle("-fx-font: 64 courier;");
+        instructions.setStyle("-fx-font: 32 courier;");
+        
+        howTo.setPrefWidth((XSIZE+UI_SIZE)/2);
+        howTo.setLayoutY(YSIZE/20);
+        howTo.setLayoutX((XSIZE+UI_SIZE)/2-howTo.getPrefWidth()/2);
+        
+        instructions.setPrefWidth(XSIZE);
+        instructions.setLayoutY(YSIZE/4);
+        instructions.setLayoutX((XSIZE+UI_SIZE)/2 - instructions.getPrefWidth()/2);
+
+        uiNodes.add(splash);
+        uiNodes.add(howTo);
+        uiNodes.add(instructions);
+        
         scene.setOnKeyTyped(new EventHandler<KeyEvent>() {
         	@Override
         	public void handle(KeyEvent ke) {
-        		splash.setOpacity(0);
-        		howTo.setOpacity(0);
-        		instructions.setOpacity(0);
-        		
+        		root.getChildren().removeAll(uiNodes);
         	}
         });
+        
+        root.getChildren().addAll(uiNodes);
+
+        
+        
+        
+	}
+	
+	private void setUI(Scene scene) {
+		
+		Rectangle uiBackground = new Rectangle(XSIZE, 0, UI_SIZE, YSIZE);
+        uiBackground.setFill(COLOR_PALETTE[3]);
+        root.getChildren().add(uiBackground);
+        
+        score = new Label("Score\n0");
+        processLabel(score, 32, UI_SIZE);
+        score.setLayoutY(YSIZE / 40);
+        
+        level = new Label("Level\n0");
+        processLabel(level, 32, UI_SIZE);
+        level.setLayoutY(YSIZE *4 / 9);
+
+        Label livesText = new Label("Lives");
+        processLabel(livesText, 32, UI_SIZE);
+        livesText.setLayoutY(YSIZE / 4);
        
-
-
-        root.getChildren().add(uiPane);
-        root.getChildren().add(score);
-        root.getChildren().add(level);
+        Label moveButtonText = new Label("Moving\nBlocks");
+        processLabel(moveButtonText, 28, UI_SIZE);
+        moveButtonText.setLayoutY(YSIZE *2/3);
         
-        Life heart1 = new Life(1);
-        Life heart2 = new Life(2);
-        Life heart3 = new Life(3);
-        hearts[0] = heart1;
-        hearts[1] = heart2;
-        hearts[2] = heart3;
-        root.getChildren().addAll(heart1, heart2, heart3);
-        
+        for(int k = 0; k < hearts.length; k++) {
+        	hearts[k] = new Life(k+1);
+        	root.getChildren().add(hearts[k]);
+        }
+
         setField();
-        
-        root.getChildren().add(splash);
-        root.getChildren().add(howTo);
-        root.getChildren().add(instructions);
-        
-        howTo.setX((XSIZE-UI_SIZE) / 2 - howTo.getBoundsInParent().getWidth()/2);
-        instructions.setX((XSIZE-UI_SIZE)/2 - instructions.getBoundsInParent().getWidth()/2);
-        howTo.setY(YSIZE / 3);
-        instructions.setY(YSIZE/3 + howTo.getBoundsInParent().getHeight() * 2);
-        
-        Label moveButtonText = new Label("Moving Blocks");
+
         Button movableButton = new Button();
         movableButton.setText("OFF");
+        movableButton.setStyle("-fx-font: 28 courier;");
         movableButton.setPrefWidth(UI_SIZE*.9);
         movableButton.setLayoutX(XSIZE + UI_SIZE/2 - movableButton.getPrefWidth()/2);
-        movableButton.setLayoutY(YSIZE*.9);
+        movableButton.setLayoutY(YSIZE*.85);
         movableButton.setOnMousePressed(new EventHandler<MouseEvent>() {
         	@Override
         	public void handle(MouseEvent me) {
@@ -201,9 +218,9 @@ public class Breakout extends Application {
         	}
         });	
         
-        root.getChildren().add(movableButton);
-        root.getChildren().add(moveButtonText);
+        root.getChildren().addAll(movableButton, score, level, livesText, moveButtonText);
         root.requestFocus();
+        setSplash(scene);
 	}
 	
 	
@@ -489,46 +506,14 @@ public class Breakout extends Application {
     
     private void gameOver() {
     	gameDone = true;
-    	ArrayList<Node> gameOverPane = new ArrayList<Node>();
-    	Rectangle gameOverScreen = new Rectangle(XSIZE + UI_SIZE, YSIZE);
-        gameOverScreen.setFill(COLOR_PALETTE[3]);
-        Button retryButton = new Button("Retry");
-        Button exitButton = new Button("Exit");
-        
-        retryButton.setOnMousePressed(new EventHandler<MouseEvent> () {
-        	@Override
-        	public void handle(MouseEvent ae) {
-        		resetLives();
-        		scoreValue = 0;
-        		jumpLevel(1);
-        		gameDone = false;
-        		root.getChildren().removeAll(gameOverPane);
-        	}
-        });
-        
-        exitButton.setOnMousePressed(new EventHandler<MouseEvent> () {
-        	@Override
-        	public void handle(MouseEvent ae) {
-        		System.exit(1);
-        	}
-        });
+    	setGameOverUI();
         
         
         for(Life l : hearts) {
         	if(l.isActive()) root.getChildren().remove(l);
+        	l.setActive(false);
         }
-        
-        gameOverPane.add(gameOverScreen);
-        gameOverPane.add(retryButton);
-        gameOverPane.add(exitButton);
-       
-        
-        
-        
-        
-        root.getChildren().addAll(gameOverPane);
-        
-        
+
     }
     
     private void nextLevel() {
@@ -561,10 +546,83 @@ public class Breakout extends Application {
     	
     }
     
+    private void setGameOverUI() {
+    	
+    	ArrayList<Node> gameOverNodes = new ArrayList<Node>();
+    	Rectangle gameOverScreen = new Rectangle(XSIZE + UI_SIZE, YSIZE);
+        gameOverScreen.setFill(COLOR_PALETTE[3]);
+        Button retryButton = new Button("Retry");
+        Button exitButton = new Button("Exit");
+        
+        boolean won = false;
+        for(Life l : hearts) won = won || l.isActive();
+        Label endText = new Label();
+        if(won) endText.setText("You won!");
+        else endText.setText("You lost!");
+        processLabel(endText, 64, XSIZE);
+        endText.setLayoutX((XSIZE+UI_SIZE)/2 - endText.getPrefWidth()/2);
+        endText.setLayoutY(YSIZE / 4);
+        
+        Label endScore = new Label("Final Score: " + scoreValue);
+        processLabel(endScore, 48, XSIZE);
+        endScore.setLayoutX((XSIZE+UI_SIZE)/2 - endText.getPrefWidth()/2);
+        endScore.setLayoutY(YSIZE / 2.5);
+        
+        retryButton.setStyle("-fx-font: 48 courier;");
+        retryButton.setPrefWidth(XSIZE/4);
+        retryButton.setLayoutX(3*(UI_SIZE+XSIZE)/8-retryButton.getPrefWidth()/2);
+        retryButton.setLayoutY(YSIZE*3/5);
+
+        exitButton.setStyle("-fx-font: 48 courier;");
+        exitButton.setPrefWidth(XSIZE/4);
+        exitButton.setLayoutX(5*(UI_SIZE+XSIZE)/8-exitButton.getPrefWidth()/2);
+        exitButton.setLayoutY(YSIZE*3/5);
+        
+        retryButton.setOnMouseClicked(new EventHandler<MouseEvent> () {
+        	@Override
+        	public void handle(MouseEvent ae) {
+        		scoreValue = 0;
+        		jumpLevel(1);
+        		gameDone = false; 
+        		root.getChildren().removeAll(gameOverNodes);
+        		root.requestFocus();
+        		resetLives();
+        	}
+        });
+        
+        exitButton.setOnMouseClicked(new EventHandler<MouseEvent> () {
+        	@Override
+        	public void handle(MouseEvent ae) {
+        		System.exit(1);
+        	}
+        });
+    	
+    	gameOverNodes.add(gameOverScreen);
+        gameOverNodes.add(retryButton);
+        gameOverNodes.add(exitButton);
+        gameOverNodes.add(endText);
+        gameOverNodes.add(endScore);
+
+        
+        root.getChildren().addAll(gameOverNodes);
+        endText.toFront();
+
+    }
+    
+    private void processLabel(Label l, int size, int width) {
+    	l.setTextAlignment(TextAlignment.CENTER);
+    	l.setAlignment(Pos.CENTER);
+        l.setTextFill(Color.WHITE);
+        l.setStyle("-fx-font: "+ Integer.toString(size) + " courier;");
+        l.setPrefWidth(width);
+        l.setLayoutX(XSIZE + UI_SIZE / 2 - l.getPrefWidth() / 2);
+    }
+    
 
     public static void main (String[] args) {
         launch(args);
     }
+    
     
     
     private class Brick extends Rectangle {
@@ -739,7 +797,7 @@ public class Breakout extends Application {
     		setFitWidth(UI_SIZE / 4);
             setFitHeight(UI_SIZE / 4);
             setX(XSIZE + pos * UI_SIZE / 4 - this.getFitWidth() / 2);
-            setY(YSIZE / 5);
+            setY(YSIZE / 3);
             active = true;
     	}
     	
