@@ -48,7 +48,7 @@ public class Breakout extends Application {
     public static final int PADDLE_DRAG = MAX_PADDLE_SPEED * 10;
     public static final int BRICK_DRAG = 300;
     public static final int PADDLE_ACCELERATION = 1000;		// Downward acceleration, for jumping paddle
-    public static final double INIT_BALL_SPEED = 500;
+    public static final double INIT_BALL_SPEED = 400;
     public static final int BALL_RADIUS = 5;
     public static final int BRICK_CURVE = 2;
     public static final String HEART_IMAGE = "heart.png";
@@ -112,7 +112,6 @@ public class Breakout extends Application {
         resetBR();
                 
         scene.setOnKeyPressed(e -> handleKeyInput(e.getCode()));
-        scene.setOnMouseClicked(e -> handleMouseInput(e.getX(), e.getY()));
         scene.setOnKeyReleased(e -> handleKeyRelease(e.getCode()));
         
         setUI();
@@ -257,7 +256,7 @@ public class Breakout extends Application {
         		if(y - BALL_RADIUS >= YSIZE) {	// When ball is lost
         			balls.remove(k);
 	        		if(balls.isEmpty()) {
-	        			if(loseLife()) gameOver();		// Lose life
+	        			if(loseLife()) gameOver();		// Lose life, if all lives are gone, game over
 	        			balls.add(new Ball());
 	        		}
 	        	} else if(y - BALL_RADIUS < 0) {
@@ -272,20 +271,20 @@ public class Breakout extends Application {
         	
         	active.checkBrickCollisions();
         	
-        	if(bricks.size() - numPermanents == 0) nextLevel();
+        	if(bricks.size() - numPermanents == 0) nextLevel();		// Checks if all breakable bricks are gone
         	
-        	if(active.getStuck()) active.stick();
+        	if(active.getStuck()) active.stick();	// Sticks ball to paddle
         	
         	active.setCenterX(x + active.getSpeeds()[0] * elapsedTime);
             active.setCenterY(y + active.getSpeeds()[1] * elapsedTime);
             if(active.getStuck() && y + BALL_RADIUS > paddle.getY()) active.setCenterY(paddle.getY() - BALL_RADIUS);
-            
+            		// This line makes sure a jumping paddle does not "go through" a falling ball
     	}
     }
     
     private void updateBricks(double elapsedTime) {
     	for(Brick b : bricks) {
-    		if(b.getSpeed() > 0) {
+    		if(b.getSpeed() > 0) {	// Updates sliding bricks
             	b.setSpeed(b.getSpeed() - BRICK_DRAG * elapsedTime);
             	b.setSpeed(Math.max(0, b.getSpeed()));
             } else if(b.getSpeed() < 0) {
@@ -299,7 +298,7 @@ public class Breakout extends Application {
         	} else {
         		b.setX(b.getX() + elapsedTime*b.getSpeed());
         	}
-    		if(b.getSpeed() != 0) b.checkBrickCollisions();
+    		if(b.getSpeed() != 0) b.checkBrickCollisions();		// Collisions between two bricks
     	}
     	
     }
@@ -307,12 +306,12 @@ public class Breakout extends Application {
     private void updatePowers(double elapsedTime) {
     	for(int k = 0; k < powers.size(); k++) {
     		Power p = powers.get(k);
-    		if(p.getOwner().getDurability() == 0 && p.getSpeed() == 0) {p.startFall();}
+    		if(p.getOwner().getDurability() == 0 && p.getSpeed() == 0) p.startFall();
     		p.updatePos(elapsedTime);
-    		if(paddle.getBoundsInParent().intersects(p.getBoundsInParent())) {
+    		if(paddle.getBoundsInParent().intersects(p.getBoundsInParent())) {	// Triggers effect
     			root.getChildren().remove(p);
     			powers.remove(k);
-    			if(p.getType() < 4) scoreValue += 200;
+    			if(p.getType() < 4) scoreValue += 200;	// Different score values for good/bad effects
     			else scoreValue -= 200;
     			p.trigger();
     		}
@@ -334,10 +333,10 @@ public class Breakout extends Application {
         } else if (code == KeyCode.L) {
         	resetLives();
         } else if (code == KeyCode.P) {
-        	nextLevel();
+        	if(!gameDone) nextLevel();
         } else if (code == KeyCode.EQUALS) {
         	for(Ball b : balls) {
-				b.setVelocity(b.getVelocity() * 1.25);
+				b.setVelocity(b.getVelocity() * 1.25);	// Limits amount speed can change
 				if(b.getVelocity() > INIT_BALL_SPEED * 3) b.setVelocity(INIT_BALL_SPEED * 3);
 				b.setSpeeds();
 		    }
@@ -348,9 +347,9 @@ public class Breakout extends Application {
 				b.setSpeeds();
 		    }
         } else if (code == KeyCode.OPEN_BRACKET) {
-        	double paddleXPos = paddle.getX() + paddle.getWidth()/2;
+        	double paddleXPos = paddle.getX() + paddle.getWidth()/2;	// Keeps paddle centered
 			paddle.setWidth(paddle.getWidth()*.75);
-			if(paddle.getWidth() < (XSIZE)/10) paddle.setWidth((XSIZE)/10);
+			if(paddle.getWidth() < (XSIZE)/10) paddle.setWidth((XSIZE)/10);		// Limits amount size can change
 			paddle.setX(paddleXPos - paddle.getWidth()/2);
         } else if (code == KeyCode.CLOSE_BRACKET) {
         	double paddleXPos = paddle.getX() + paddle.getWidth()/2;
@@ -361,7 +360,7 @@ public class Breakout extends Application {
         	balls.add(new Ball());
         } else if (code.isDigitKey()) {
         	String name = code.name();
-        	jumpLevel(Character.getNumericValue(name.charAt(name.length()-1)));
+        	jumpLevel(Character.getNumericValue(name.charAt(name.length()-1)));	// Jumps to level specified by key code
         }
     }
     
@@ -378,13 +377,9 @@ public class Breakout extends Application {
     		}
     	}
 	}
-
-    private void handleMouseInput (double x, double y) {
-        
-    }
-
     
-    private void switchControls() {
+    
+    private void switchControls() { // Separate methods, so effects aren't cancelled out
     	left = KeyCode.RIGHT;
     	right = KeyCode.LEFT;
     }
@@ -395,27 +390,26 @@ public class Breakout extends Application {
     }
     
     
-    private void setField() {
+    private void setField() {	// Only paddle is not reset
         balls.add(new Ball());
-        powers = new ArrayList<Power>();
+        powers = new ArrayList<Power>();	// All previous powers, bricks removed
         bricks = new ArrayList<Brick>();
         try {
 			readLevel();
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-        for(int k = 0; k < bricks.size(); k++) {
+        for(int k = 0; k < bricks.size(); k++) {	// Spaces them out evenly
         	bricks.get(k).setX(k%10 * (XSIZE)/10 + (XSIZE) / 264);
         	bricks.get(k).setY((int) k/10 * YSIZE / 12 + YSIZE / 60);
-        }
-                
+        }            
     }
     
     private void readLevel() throws IOException{
     	String str;
     	numPermanents = 0;
     	while((str = br.readLine()) != null) {
-    		String[] brickCodes = str.split(" ");
+    		String[] brickCodes = str.split(" ");	// Follow level file format specified in README
     		if(brickCodes[0].equals("-")) {
     			currentLevel ++;
     			return;
@@ -423,23 +417,22 @@ public class Breakout extends Application {
     		for(int k = 0; k < brickCodes.length; k++) {
     			char[] code = brickCodes[k].toCharArray();
     			int type = 0;
-    			if(code[0] == 'p') type = ThreadLocalRandom.current().nextInt(1, 4);
+    			if(code[0] == 'p') type = ThreadLocalRandom.current().nextInt(1, 4);	// Always a random power up/down
     			else if(code[0] == 'd') type = ThreadLocalRandom.current().nextInt(4, 7);
     			else if(code[0] == 't') type = 7;
     			Brick toAdd = new Brick((XSIZE) / 11, YSIZE / 20, Character.getNumericValue(code[1]), type);
     			bricks.add(toAdd);
-    			root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, -1 is top only, durability 4 is permanent
+    			root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, 7 is top only, durability 4 is permanent
     			if(toAdd.getDurability() >= 4 && toAdd.getType() < 7) numPermanents += 1;
             	toAdd.setArcHeight(BRICK_CURVE);
             	toAdd.setArcWidth(BRICK_CURVE);
-            	
             	if(toAdd.getType() > 0 && toAdd.getType() < 7) powers.add(new Power(toAdd.getType(), toAdd));
     		}
     	}
-    	gameOver();
+    	gameOver();	// Player wins if no more levels can be read
     }
     
-    private void resetBR() {
+    private void resetBR() {	// Resets BufferedReader if a previous level needs to be reloaded
     	try{ 
         	FileInputStream fstream = new FileInputStream(LEVEL_FILE);
         	DataInputStream in = new DataInputStream(fstream);
@@ -449,20 +442,19 @@ public class Breakout extends Application {
     }
     
     
-    private boolean loseLife() {
+    private boolean loseLife() {	// returns true when dead
     	resetControls();
-    	for(int k = 2; k >= 0; k--) {
+    	for(int k = 2; k >= 0; k--) {	// Iterates backwards to remove last heart first
     		if(hearts[k].isActive()) {
     			hearts[k].setActive(false);
     			root.getChildren().remove(hearts[k]);
-    			
     			for(int kk = 0; kk < powers.size(); kk++) {
     				if(powers.get(kk).getSpeed() != 0) {
-    					root.getChildren().remove(powers.get(kk));
+    					root.getChildren().remove(powers.get(kk));	// Removes falling powers at lost life
     					powers.remove(kk);
     				}
     			}
-    			paddle.setWidth((XSIZE)/5);
+    			paddle.setWidth((XSIZE)/5);		// Returns paddle to original size
     			return false;
     		}
     	}
@@ -482,15 +474,13 @@ public class Breakout extends Application {
     	gameDone = true;
     	setGameOverUI();
         
-        
-        for(Life l : hearts) {
+        for(Life l : hearts) {	// Removes all active hearts
         	if(l.isActive()) root.getChildren().remove(l);
         	l.setActive(false);
         }
-
     }
     
-    private void nextLevel() {
+    private void nextLevel() {	// Iterates backwards to avoid index out of bounds
     	for(int k = balls.size()-1; k >= 0; k--) {
     		root.getChildren().remove(balls.get(k));
     		balls.remove(k);
@@ -508,27 +498,26 @@ public class Breakout extends Application {
     
     private void jumpLevel(int levelNumber) {
     	if(levelNumber > currentLevel) {
-    		for(int k = 0; k < levelNumber - currentLevel; k++) {
+    		while(currentLevel != levelNumber) {
     			nextLevel();
     		}
     	} else {
-    		resetBR();
+    		resetBR();	// Need to reset br to reload previous levels
     		for(int k = 0; k < levelNumber; k++) {
     			nextLevel();
     		}
     	}
-    	
     }
     
     private void setGameOverUI() {
-    	
     	ArrayList<Node> gameOverNodes = new ArrayList<Node>();
     	Rectangle gameOverScreen = new Rectangle(XSIZE + UI_SIZE, YSIZE);
         gameOverScreen.setFill(COLOR_PALETTE[3]);
+        
         Button retryButton = new Button("Retry");
         Button exitButton = new Button("Exit");
         
-        boolean won = false;
+        boolean won = false;	// Checks if player won
         for(Life l : hearts) won = won || l.isActive();
         Label endText = new Label();
         if(won) endText.setText("You won!");
@@ -553,7 +542,7 @@ public class Breakout extends Application {
         exitButton.setLayoutY(YSIZE*3/5);
         
         retryButton.setOnMouseClicked(new EventHandler<MouseEvent> () {
-        	@Override
+        	@Override		// Resets everything for a retry: hearts, gameDone, score, and jumps to level 1
         	public void handle(MouseEvent ae) {
         		scoreValue = 0;
         		jumpLevel(1);
@@ -565,7 +554,7 @@ public class Breakout extends Application {
         });
         
         exitButton.setOnMouseClicked(new EventHandler<MouseEvent> () {
-        	@Override
+        	@Override		// Exits app
         	public void handle(MouseEvent ae) {
         		System.exit(1);
         	}
@@ -576,14 +565,12 @@ public class Breakout extends Application {
         gameOverNodes.add(exitButton);
         gameOverNodes.add(endText);
         gameOverNodes.add(endScore);
-
         
         root.getChildren().addAll(gameOverNodes);
         endText.toFront();
-
     }
     
-    private void processLabel(Label l, int size, int width) {
+    private void processLabel(Label l, int size, int width) {	// Used to quickly format UI and other labels
     	l.setTextAlignment(TextAlignment.CENTER);
     	l.setAlignment(Pos.CENTER);
         l.setTextFill(Color.WHITE);
@@ -599,30 +586,21 @@ public class Breakout extends Application {
     
     
     
-    
-    
-    
     private class Brick extends Rectangle {
     	public Brick(int width, int height, int durability, int type) {	//Type of 0 is neutral, 1-3 is power up, 4-6 is down, 7 is top block
     		super(width, height);
     		this.durability = durability;
-    		if(this.durability > 4) this.durability = 4;
     		this.type = type;
     		rePaint();
     		speed = 0;
     	}
     	
-    	int durability;
-    	int type;
-    	double speed;
-    	
-    	
-    	public int getType() {
-    		return type;
-    	}
+    	private int durability;
+    	private int type;
+    	private double speed;
     	
     	public int reduceDurability(Ball b) {
-    		if(type == 7 && b.getCenterY() > getY() + getHeight()) return durability;
+    		if(type == 7 && b.getCenterY() > getY() + getHeight()) return durability; // Top blocks unaffected when hit from bottom
     		if(durability <= 3) {
     			durability --;
     			scoreValue += 10;
@@ -632,47 +610,50 @@ public class Breakout extends Application {
     	}
     	
     	public void rePaint() {
-    		if(type == 7) {
+    		if(type == 7) {		// Adds a gradient with UI color if top block
     			Stop[] stops = new Stop[] { new Stop(0, COLOR_PALETTE[durability-1]), new Stop(1, COLOR_PALETTE[3])};
     			LinearGradient lg1 = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, stops);
     			this.setFill(lg1);
     		} else {
-	    		this.setFill(COLOR_PALETTE[Math.max(0,durability-1)]);
+	    		this.setFill(COLOR_PALETTE[Math.max(0,durability-1)]);	// Otherwise use palette for different block colors
     		}
     	}
     	
     	public void checkBrickCollisions() {
     		for(Brick b : bricks) {
     			if(b != this && b.getBoundsInParent().intersects(this.getBoundsInParent())) {
-    				b.setSpeed(this.getSpeed());
-    				if(this.getX() > b.getX() && this.getX() < b.getX() + b.getWidth()) this.setX(b.getX() + b.getWidth());
+    				b.setSpeed(this.getSpeed());	// Give colliding block its own speed
+    				if(this.getX() > b.getX() && this.getX() < b.getX() + b.getWidth()) this.setX(b.getX() + b.getWidth());	// Prevents overlapping
     				if(this.getX() < b.getX() && this.getX() + this.getWidth() > b.getX()) this.setX(b.getX() - this.getWidth());
-    				this.setSpeed(0.9*this.getSpeed());
+    				this.setSpeed(0.9*this.getSpeed());	// Slightly reduces first block's speed, looks cooler/more natural
     			}
     		}
     	}
     	
     	public int getDurability() {return durability;}
     	
+    	public int getType() {return type;}
+    	
     	public void setSpeed(double xs) {
-    			if(durability >= 4) speed = 0;
+    			if(durability >= 4) speed = 0;	// Permanent blocks do not move, even in movable mode
     			else speed = xs;
     		}
-    	public double getSpeed() {return speed;}
+    	
+    	public double getSpeed() {return speed;}	// Only x speed matters
 
     }
     
     private class Ball extends Circle {
     	public Ball() {
-    		super(BALL_RADIUS, COLOR_PALETTE[3]);
-    		velocity = INIT_BALL_SPEED + (currentLevel - 1) * 25;
-    		angle = 3*pi/2;
+    		super(BALL_RADIUS, COLOR_PALETTE[3]);	// Uses UI color
+    		velocity = INIT_BALL_SPEED + (currentLevel - 1) * 25;	// Increase in speed as levels progress
+    		angle = 3*pi/2;		// Initial angle straight up ('up' is negative y direction)
     		speeds = new double[2];
     		setSpeeds();
     		setCenterX(paddle.getX() + paddle.getWidth() / 2);
     		setCenterY(paddle.getY()-getRadius());
             root.getChildren().add(this);
-            stick();
+            stick();	// Initially is stuck
             stuck = true;
     	}
     	
@@ -685,7 +666,7 @@ public class Breakout extends Application {
     		angle = pi - angle;					// Reflects angle across x axis		
     		while(angle < 0) angle += 2*pi;		// Loop normalizes angle to between 0 and 2*pi
     		angle = angle%(2*pi);
-    		setSpeeds();
+    		setSpeeds();						// Refreshes speeds after a bounce
     	}
     	
     	public void bounceY() {
@@ -715,18 +696,18 @@ public class Breakout extends Application {
     		}
     	}
     	
-    	public void setAngle(double ang) {
+    	public void setAngle(double ang) {	// Specifically set an angle (for paddle bounces)
     		angle = ang;
     		while(angle < 0) angle += 2*pi;
     		angle = angle%(2*pi);
     		setSpeeds();
     	}
     	
-    	public void stick() {
+    	public void stick() {		// Makes ball speed match paddle speed
     		speeds[0] = paddle.getXSpeed();
     		speeds[1] = paddle.getYSpeed();
-    		if(paddle.getX() <= 0 || paddle.getX() + paddle.getWidth() >= XSIZE) speeds[0] = 0;
-    		stuck = true;
+    		if(paddle.getX() <= 0 || paddle.getX() + paddle.getWidth() >= XSIZE) speeds[0] = 0;	
+    		stuck = true;	// Makes sure ball doesn't move when paddle hits wall
     	}
     	
     	public void checkBrickCollisions() {
@@ -735,7 +716,7 @@ public class Breakout extends Application {
         		
         		if(b.getBoundsInParent().intersects(getBoundsInParent())) {
         			if(b.reduceDurability(this) == 0) scoreValue+=90;
-        			b.setSpeed(this.getSpeeds()[0]);
+        			b.setSpeed(this.getSpeeds()[0]);	// Gives brick the ball's x speed
         			if(getCenterX() > b.getX() + b.getWidth()) bounceX(1);
         			else if(getCenterX() < b.getX()) bounceX(-1);
         			if(getCenterY() > b.getY() + b.getHeight()) bounceY(1);
@@ -746,7 +727,6 @@ public class Breakout extends Application {
     				root.getChildren().remove(b);
     				bricks.remove(k);
     			}
-        		
         	}
     	}
     	
@@ -778,21 +758,21 @@ public class Breakout extends Application {
             active = true;
     	}
     	
+    	private boolean active;
+    	
     	public boolean isActive() {return active;}
     	public void setActive(boolean b) {active = b;}
-    	
-    	private boolean active;
     	
     }
     
     
     private class Power extends ImageView {    	
-    	public Power(int type, Brick owner) {		// 1 is extra ball, 2 is slower ball, 3 is bigger paddle, 4 is smaller paddle, 5 is faster ball, 6 is reverse controls
-    		super();
+    	public Power(int type, Brick owner) {		// 1 is extra ball, 2 is slower ball, 3 is bigger paddle
+    		super();								// 4 is smaller paddle, 5 is faster ball, 6 is reverse controls
     		if(type < 4) this.setImage(powerUp);
     		else this.setImage(powerDown);
     		this.type = type;
-    		this.owner = owner;
+    		this.owner = owner;		// Tracks owner brick, falls when it breaks
     		root.getChildren().add(this);
     		speed = 0;
     	}
