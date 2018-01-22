@@ -8,8 +8,17 @@ John Fitzpatrick
 jcf44
 
 Breakout.java
+Basic javafx code taken from lab_bounce.
+
 Use arrow keys to move paddle, hold/release space to stick/unstick ball
+Press up arrow key to make paddle "jump"
+Press button on side bar to turn on moving block mode
+
 Cheat codes:
+'o' - adds a new ball
+'p' - finishes current level
+'l' - refills lives
+1-5 - jumps to the respective level
 
 Level file format:
 Blocks will be placed in the level from left to right, starting at the top left of the screen, and fitting 10 blocks per row.
