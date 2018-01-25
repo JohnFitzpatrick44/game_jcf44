@@ -32,5 +32,5 @@ Many of the classes are easily expandable. For example:
  * There is only one possible level file format, which is quite strict. I am not very good at file handling, so I didn't add error checking. 
  	* This part of the program seems the most volatile, so be careful when adding levels.
  * I noticed some inconsistent bugs pertaining to skipping a level, jumping to a level, and ending the game at the same time. This would cause bricks to appear over the end game UI.
- 	* As long as the player does not mash cheat keys as fast as possible, this problem shouldn't occur.
+ 	* As long as the player does not mash cheat keys as fast as possible, this problem shouldn't occur.	
  	

@@ -1,13 +1,13 @@
 game
 ====
 
-#First project for CompSci 308 Fall 2017
+# First project for CompSci 308 Fall 2017
 
 John Fitzpatrick
 Started 1/14/18, Submitted 1/21/18, Updated 1/24/18
 jcf44
 
-#Breakout.java
+## Breakout.java
 Basic javafx application skeleton code taken from lab_bounce.
 Start the program with Breakout.java (use main.java when playing the refactored game for the analysis).
 Test level files included, change constant value in Breakout.java
@@ -44,9 +44,9 @@ Test level files included, change constant value in Breakout.java
  * 'n0' will make a blank space, so patters of blocks can be made.
  * Separate brick codes by whitespace, separate levels by one '-' in a new line by itself.
 ### Example file:
-~~~~
+```
 n1 n0 n0 p1 n0 n0 d1 n0 n0 n1
 -
-~~~~
+```
  * Will create one row of four spaced out blocks, with one power up and one power down.
  * Level file format is very restrictive.

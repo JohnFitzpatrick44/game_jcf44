@@ -1,5 +1,11 @@
 import javafx.scene.shape.Circle;
-	
+
+/**
+ * Class that acts as a ball. Uses angle and velocity values to easily set and change angle, calculates x and y speeds from that.
+ * Instantiating a ball automatically adds it to the game. Any number of balls can be supported, although the game may lag.
+ * @author Jack
+ * @version %G%
+ */
 public class Ball extends Circle {
     private double velocity;
 	private double angle;		// Angle measured from positive x axis
@@ -8,9 +14,9 @@ public class Ball extends Circle {
 	private Breakout game;
 	
 	public Ball(Breakout game) {
-		super(Breakout.BALL_RADIUS, Breakout.COLOR_PALETTE[3]);		// Uses UI color for ball
+		super(Breakout.BALL_RADIUS, Breakout.COLOR_PALETTE[3]);	
 		velocity = Breakout.INIT_BALL_SPEED + (game.getCurrentLevel()-1) * 25;		// Increase in speed as levels progress
-		angle = 3*Math.PI/2;		// Initial angle straight up ('up' is negative y direction), all angles in radians
+		angle = 3*Math.PI/2;		// All angles in radians
 		speeds = new double[2];		// Speeds[0] is x speed, speeds[1] is y speed
 		setSpeeds();
 		setCenterX(game.getPaddle().getX() + game.getPaddle().getWidth() / 2);
@@ -34,7 +40,7 @@ public class Ball extends Circle {
 	 * Bounces ball in relative y direction
 	 */
 	public void bounceY() {
-		angle = 2*Math.PI - angle;				// Reflects across y axis
+		angle = 2*Math.PI - angle;
 		while(angle < 0) angle += 2*Math.PI;
 		angle = angle%(2*Math.PI);
 		setSpeeds();
