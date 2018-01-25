@@ -13,24 +13,20 @@ Start the program with Breakout.java (use main.java when playing the refactored 
 Test level files included, change constant value in Breakout.java
  * Program will handle IOException
  * Test files are LevelFile.txt, LevelFile1.txt, LevelFile2.txt.
-
  * Use arrow keys to move paddle, hold/release space to stick/unstick ball.
  * Press up arrow key to make paddle "jump".
  * The ball will bounce at different angles depending on where it hits the paddle.
-
  * There are multiple block types: neutral, blocks that must be hit from the top, and power up/down blocks.
  * All blocks can have durabilities up to 3.
  * Permanent blocks are also implemented, and they cannot be moved in movable mode.
-
  * Power ups include decreased ball speed, increased paddle length, and extra balls.
  * Power downs include increased ball speed, decreased paddle length, and reversed controls.
-
  * Press button on side bar to turn on moving block mode (extra feature).
 
 ## Cheat codes:
- * 'o' - adds a new ball
- * 'p' - finishes current level
- * 'l' - refills lives
+ * 'O' - adds a new ball
+ * 'P' - finishes current level
+ * 'L' - refills lives
  * 1-5 - jumps to the respective level
  * '=' - increases ball speed
  * '-' - decreases ball speed
@@ -43,7 +39,7 @@ Test level files included, change constant value in Breakout.java
  * 'n' is a neutral block, 'p' is power up, 'd' is power down, 't' is top-only.
  * 'n0' will make a blank space, so patters of blocks can be made.
  * Separate brick codes by whitespace, separate levels by one '-' in a new line by itself.
-### Example file:
+Example file:
 ```
 n1 n0 n0 p1 n0 n0 d1 n0 n0 n1
 -
