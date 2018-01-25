@@ -691,31 +691,7 @@ public class Breakout  {
     }
     
     public Group getRoot() {return root;}
-
-    /*public static void main (String[] args) {
-        
-    }*/
     
-    
-    /**
-     * Represents brick in game
-     * 
-     * @author Jack
-     *	@version %G%
-     */
-    
-    
-    /**
-     * Represents a ball in game
-     * 
-     * @author Jack
-     *	@version %G%
-     */
- 
-    	
-    	
-    	
-     
     /**
      * Represents a heart in game
      * 
