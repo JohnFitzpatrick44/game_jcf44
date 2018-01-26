@@ -69,7 +69,6 @@ public class Breakout  {
     public static final int PADDLE_ACCELERATION = 1000;		// Downward acceleration, for jumping paddle
     public static final String HEART_IMAGE = "heart.png";
     public static final String POWER_UP_IMAGE = "extraballpower.gif";
-    public static final String POWER_DOWN_IMAGE = "sizepower.gif";
     public static final double FALL_SPEED = 300;
     public static final Color[] COLOR_PALETTE = new Color[] {Color.rgb(251, 139, 76), Color.rgb(224, 98, 29), 
     		Color.rgb(193, 68, 49), Color.rgb(87, 87, 91)}; // In order: Brick 1 color, brick 2 color, brick 3 color, UI color
@@ -83,7 +82,8 @@ public class Breakout  {
     
     private ArrayList<Ball> balls;
     private ArrayList<Brick> bricks;
-    private ArrayList<Power> powers;
+    private ArrayList<DropPower> powers;
+
 	private Life[] hearts = new Life[3];
 	private Paddle paddle;
 
@@ -350,8 +350,8 @@ public class Breakout  {
      */
     private void updatePowers(double elapsedTime) {
     	for(int k = 0; k < powers.size(); k++) {
-    		Power p = powers.get(k);
-    		if(p.getOwner().getDurability() == 0 && p.getSpeed() == 0) p.startFall();
+    		DropPower p = powers.get(k);
+    		if(p.getOwner().getDurability() == 0 && !p.getFalling()) p.startFalling();
     		p.updatePos(elapsedTime);
     		if(paddle.getBoundsInParent().intersects(p.getBoundsInParent())) {	// Triggers effect
     			root.getChildren().remove(p);
@@ -443,7 +443,7 @@ public class Breakout  {
      */
     private void setField() {	// Only paddle is not reset
         balls.add(new Ball(this));
-        powers = new ArrayList<Power>();	// All previous powers, bricks removed
+        powers = new ArrayList<DropPower>();
         bricks = new ArrayList<Brick>();
         try {
 			readLevel();
@@ -487,15 +487,12 @@ public class Breakout  {
     			bricks.add(toAdd);
     			root.getChildren().add(toAdd);		// 0 is normal type, 1-6 are powers, 7 is top only, durability 4 is permanent
     			if(toAdd.getDurability() >= 4 && toAdd.getType() < 3) numPermanents += 1;
-            	if(toAdd.getType() == 1) {
-            		PowerUp pUp = new PowerUp(toAdd, this);
-            		powers.add(pUp);
-            		root.getChildren().add(pUp);
-            	}
-            	else if(toAdd.getType() == 2) {
-            		PowerDown pDown = new PowerDown(toAdd, this);
-            		powers.add(pDown);
-            		root.getChildren().add(pDown);
+    			DropPower p = null;
+            	if(toAdd.getType() == 1) p = new PowerUp(toAdd, this);
+            	else if(toAdd.getType() == 2) p = new PowerDown(toAdd, this);
+            	if(p!=null) {
+            		root.getChildren().add(p);
+            		powers.add(p);
             	}
     		}
     	}
@@ -528,7 +525,7 @@ public class Breakout  {
     			hearts[k].setActive(false);
     			root.getChildren().remove(hearts[k]);
     			for(int kk = 0; kk < powers.size(); kk++) {
-    				if(powers.get(kk).getSpeed() != 0) {
+    				if(powers.get(kk).getFalling()) {
     					root.getChildren().remove(powers.get(kk));	// Removes falling powers at lost life
     					powers.remove(kk);
     				}
@@ -585,6 +582,7 @@ public class Breakout  {
     		root.getChildren().remove(powers.get(k));
     		powers.remove(k);
     	}
+    	
     	for(int k = bricks.size()-1; k >= 0; k--) {
     		root.getChildren().remove(bricks.get(k));
     		bricks.remove(k);

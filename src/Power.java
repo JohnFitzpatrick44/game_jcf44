@@ -1,33 +1,61 @@
 import javafx.scene.image.ImageView;
+
 	/**
-     * Represents powers that fall from bricks in game. Base class that positive and negative powers can inherit.
+     * Abstract class that represents powers in game.
+     * 
      * @author Jack
      * @version %G%
      */
-public class Power extends ImageView {
+public abstract class Power extends ImageView {
+	
 	/**
-	 * Tracks owner brick, so power will fall when it breaks
-	 * @param owner
+	 * Tracks owner brick, so power will start "falling" when it breaks. Initializes x and y speeds to 0.
+	 * 
+	 * @param owner Brick the power is tied to
 	 */
-	public Power(Brick owner) {
+	public Power(Brick owner, Breakout game) {
 		super();
 		this.owner = owner;
-		speed = 0;
+		xSpeed = 0;
+		ySpeed = 0;
+		this.game = game;
 	}
+	
 	private Brick owner;
-	private double speed;
+	private double xSpeed;
+	private double ySpeed;
+	private Breakout game;
+	
 	/**
-	 * Update position if falling, sticks to owner brick if not. Must update position to track bricks due to movable brick mode.
-	 * @param elapsedTime
+	 * Gets relevant Breakout game
+	 * @return Breakout game
 	 */
-	public void updatePos(double elapsedTime) {
-		if(speed == 0) {
-			setX(owner.getX() + owner.getWidth() / 2 - getBoundsInParent().getWidth() / 2);
-			setY(owner.getY() + owner.getHeight() / 2 - getBoundsInParent().getHeight() / 2);
-		} else setY(this.getY() + elapsedTime * speed);
-	}
-	public void startFall() {speed = Breakout.FALL_SPEED;}
-	public double getSpeed() {return speed;}
+	public Breakout getGame() {return game;}
+	
+	/**
+	 * Sets x speed of power
+	 * @param x New x speed
+	 */
+	public void setSpeedX(double x) {xSpeed = x;}
+	
+	/**
+	 * Sets y speed of power
+	 * @param y New y speed
+	 */
+	public void setSpeedY(double y) {ySpeed = y;}
+	
+	/**
+	 * @return x speed
+	 */
+	public double getXSpeed() {return xSpeed;}
+	
+	/**
+	 * @return y speed
+	 */
+	public double getYSpeed() {return ySpeed;}
+	
+	/**
+	 * @return owner Brick
+	 */
 	public Brick getOwner() {return owner;}
-	public void trigger() {};
 }

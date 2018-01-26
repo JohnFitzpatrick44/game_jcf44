@@ -24,12 +24,10 @@ public class Paddle extends Rectangle {
 		ySpeed = 0;
 		sticky = true;
 		resetPosition();
-		this.setArcHeight(10);	//Globalify
+		this.setArcHeight(10);
         this.setArcWidth(20);
         this.setFill(Breakout.COLOR_PALETTE[3]);
 	}
-	
-	
 	
 	public void resetPosition() {
 		this.setX(Breakout.XSIZE/2 - this.getWidth()/2);
@@ -49,8 +47,6 @@ public class Paddle extends Rectangle {
 		else if(getWidth() < (Breakout.XSIZE)/10) setWidth((Breakout.XSIZE)/10);
 		setX(paddleXPos - getWidth()/2);
 	}
-	
-	
 	
 	public void setXSpeed(double xs) {this.xSpeed = xs;}
 	public double getXSpeed() {return xSpeed;}
