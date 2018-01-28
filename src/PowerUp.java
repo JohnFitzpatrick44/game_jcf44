@@ -1,9 +1,13 @@
+// This class, a subclass of DropPower.java, shows an implementation of a power. This specific class represents positive effects, 
+// shown in the trigger method. This shows the two abstract superclasses Power and DropPower in action, and how inheritance
+// ensures compatibility and increases code flexibility.
+
 import java.util.concurrent.ThreadLocalRandom;
 import javafx.scene.image.Image;
 
 	/**
      * Class for drop powers with positive effects, including adding a ball, making the paddle larger, and decreasing ball speed.
-     * @author Jack
+     * @author Jack Fitzpatrick
      * @version %G%
      */
 public class PowerUp extends DropPower {
@@ -21,6 +25,7 @@ public class PowerUp extends DropPower {
 	public PowerUp(Brick owner, Breakout game) {
 		super(owner, game);
 		this.setImage(new Image(POWER_UP_IMAGE));
+		//game.getRoot().getChildren().add(this);
 	}
 	
 	/**

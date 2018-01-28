@@ -1,12 +1,16 @@
 import javafx.scene.image.ImageView;
 
+// I think this code is well designed, as it shows off inheritance quite well. From this class and its corresponding interface,
+// A new Power with any new effect and behavior can be implemented into Breakout. 
+
 	/**
-     * Abstract class that represents powers in game.
+     * Abstract class that represents powers in game. Extended by implementing methods found in IPower.java.
+     * Tracks speed in two directions and Brick owner. From there, how the Power reacts and moves is customizable.
      * 
-     * @author Jack
+     * @author Jack Fitzpatrick
      * @version %G%
      */
-public abstract class Power extends ImageView {
+public abstract class Power extends ImageView implements IPower {
 	
 	/**
 	 * Tracks owner brick, so power will start "falling" when it breaks. Initializes x and y speeds to 0.
@@ -58,4 +62,9 @@ public abstract class Power extends ImageView {
 	 * @return owner Brick
 	 */
 	public Brick getOwner() {return owner;}
+	
+	/**
+	 * Updates position, needs to be overwritten
+	 */
+	public void updatePos(double elapsedTime) {};
 }

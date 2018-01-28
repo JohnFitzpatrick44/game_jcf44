@@ -1,7 +1,10 @@
+// This class, a subclass of Power, is also abstract. It is more specific to set the power's behavior, but
+// further subclasses are made to set the power's effects. This prevents duplication and increases code flexibility.
+
 /**
  * Abstract class for powers that drop vertically from their bricks, triggering upon hitting the paddle
  * 
- * @author Jack
+ * @author Jack Fitzpatrick
  * @version %G%
  */
 public abstract class DropPower extends Power implements IPower {
@@ -28,7 +31,7 @@ public abstract class DropPower extends Power implements IPower {
 	 * Updates position of power, either on brick or falling straight down
 	 */
 	public void updatePos(double elapsedTime) {
-		if(falling) {
+		if(!falling) {
 			setX(getOwner().getX() + getOwner().getWidth() / 2 - getBoundsInParent().getWidth() / 2);
 			setY(getOwner().getY() + getOwner().getHeight() / 2 - getBoundsInParent().getHeight() / 2);
 		} else setY(this.getY() + elapsedTime * getYSpeed());

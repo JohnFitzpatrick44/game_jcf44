@@ -82,7 +82,7 @@ public class Breakout  {
     
     private ArrayList<Ball> balls;
     private ArrayList<Brick> bricks;
-    private ArrayList<DropPower> powers;
+    private ArrayList<Power> powers;
 
 	private Life[] hearts = new Life[3];
 	private Paddle paddle;
@@ -228,11 +228,11 @@ public class Breakout  {
 	 * @param elapsedTime Amount of time passed in one step
 	 */
     public void step (double elapsedTime) {
-    	if(gameDone) return;	// Included so it does not trigger gameOver() repeatedly during end game screen
+    	if(gameDone) return;
     	
     	updatePaddle(elapsedTime);
     	updateBalls(elapsedTime);
-    	if(movable) updateBricks(elapsedTime);	// Only updates brick positions when they are movable
+    	if(movable) updateBricks(elapsedTime);
     	updatePowers(elapsedTime);
     	
     	score.setText("Score\n" + scoreValue);
@@ -350,7 +350,8 @@ public class Breakout  {
      */
     private void updatePowers(double elapsedTime) {
     	for(int k = 0; k < powers.size(); k++) {
-    		DropPower p = powers.get(k);
+    		Power p = powers.get(k);
+    		p.toFront();
     		if(p.getOwner().getDurability() == 0 && !p.getFalling()) p.startFalling();
     		p.updatePos(elapsedTime);
     		if(paddle.getBoundsInParent().intersects(p.getBoundsInParent())) {	// Triggers effect
@@ -443,7 +444,7 @@ public class Breakout  {
      */
     private void setField() {	// Only paddle is not reset
         balls.add(new Ball(this));
-        powers = new ArrayList<DropPower>();
+        powers = new ArrayList<Power>();
         bricks = new ArrayList<Brick>();
         try {
 			readLevel();

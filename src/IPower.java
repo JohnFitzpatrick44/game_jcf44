@@ -1,7 +1,10 @@
+// Corresponding interface to Power.java. I think this shows good design, as an interface is an effective way
+// to ensure a new Power subclass will behave with Breakout accordingly. 
+
 /**
- * To make a new power type, follow this interface. 
+ * To make a new power type, follow this interface. This will allow it to interact with Breakout without errors. 
  * 
- * @author Jack
+ * @author Jack Fitzpatrick
  * @version %G%
  */
 public interface IPower {
